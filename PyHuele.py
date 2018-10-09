@@ -46,7 +46,7 @@ def main():
 					exit(1)
 
 	modul = tipos_modulacion[mod](experiment_data_dict,platform_data_dict)
-	path = modul.captura_datos()
+	path = modul.iniciar_captura_datos()
 
 	return
 
