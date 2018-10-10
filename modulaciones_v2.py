@@ -15,7 +15,7 @@ import numpy as np
 import math
 import pickle
 import sys
-from sklearn import svm
+import signal
 
 class Modulacion(object):
 
@@ -101,7 +101,9 @@ class Modulacion(object):
         os.dup2(se.fileno(), sys.stderr.fileno())
 
         pid = str(os.getpid())
-        open('file_daemon','w+').write("%s\n" % pid)
+        Modulacion.file_daemon = open('file_daemon','w+')
+        Modulacion.file_daemon.write("%s\n" % pid)
+        Modulacion.file_daemon.close()
 
     def activar_GPIO_valvulas(self):
         for elec in Modulacion.electrovalvulas:
@@ -291,6 +293,7 @@ class Modulacion(object):
         self.thread.do_run = False
         self.thread.join()
 
+        os.remove("file_daemon.txt")
         return
     
     def captura_aire(self,heatpin,sensorpin):
@@ -321,7 +324,7 @@ class Modulacion(object):
 
     def iniciar_captura_datos(self):
         signal.signal(signal.SIGUSR1, handler_signal)
-        Thread(target=self.captura_datos).start() # Creo el hilo de escritura global
+        Thread(target=self.captura_datos).start() # Creo el hilo de captura de datos y lo inicio
         self.hilo_escritura_datos()
         return
 
@@ -433,7 +436,7 @@ class Puro(Modulacion):
         time.sleep(sle)
         
     def captura_datos(self):
-        super().captura_datos()
+        super().captura_datos(Puro.heatPin2600,Puro.sensorPin2600)
         return Puro.path
 
 class Regresion(Modulacion):
