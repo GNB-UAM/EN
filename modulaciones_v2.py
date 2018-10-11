@@ -64,10 +64,8 @@ class Modulacion(object):
         Modulacion.electrpos = config_platform[tc.SVALPOS]
         Modulacion.capturas_iniciales = [4] if Modulacion.electrpos != 'R' else [1,2,3]
         Modulacion.queue = qu.Queue() # Creo la cola de mensaje global
-        Modulacion.event = Event() # Evento para sincronizar los hilos de captura y de escritura
+        Modulacion.event_TyH = Event() # Evento para sincronizar los hilos de captura y de escritura
         self.activar_GPIO_valvulas() # Puede ser un foco de problemas, puede que haya que cambiarlo
-        self.write_thread = Thread(target=self.hilo_escritura_datos,args=(strings,)) # Creo el hilo de escritura global
-        self.write_thread.start()
 
     def daemonizar(stdin='stdin.txt',stdout='stdout.txt',stderr='stderr.txt'): 
         try:
@@ -93,16 +91,15 @@ class Modulacion(object):
             sys.exit(1)
 
         for f in sys.stdout, sys.stderr,sys.stdin: f.flush()
-        si = open("salida_in.txt", 'r')
+        si = open("salida_in.txt", 'a+')
         so = open("salida_out.txt", 'w')
         se = open("salida_err.txt", 'w')
         os.dup2(si.fileno(), sys.stdin.fileno())
         os.dup2(so.fileno(), sys.stdout.fileno())
         os.dup2(se.fileno(), sys.stderr.fileno())
 
-        pid = str(os.getpid())
         Modulacion.file_daemon = open('file_daemon','w+')
-        Modulacion.file_daemon.write("%s\n" % pid)
+        Modulacion.file_daemon.write("%d\n" % os.getpid())
         Modulacion.file_daemon.close()
 
     def activar_GPIO_valvulas(self):
@@ -177,7 +174,7 @@ class Modulacion(object):
     def reset(self,heatPin):
         
         # Me sincronizo con el hilo de escritura para asegurarme de que ha tenido tiempo para escribir todo
-        Modulacion.queue.put(0) 
+        Modulacion.queue.put(Modulacion.SYNC) 
         Modulacion.event.wait() 
         
         self.cerrar_electrovalvulas()
@@ -233,17 +230,19 @@ class Modulacion(object):
     def hilo_escritura_datos(self):
         
         values = Modulacion.queue.get()
-        while(values != EXIT):
-            if values == SYNC: #CASO NECESARIO PARA SINCRONIZAR CON LA ESCRITURA DE LOS FICHEROS
-            values = Modulacion.queue.get()
-            continue
+        while(values != Modulacion.EXIT):
+            if values == Modulacion.SYNC: #CASO NECESARIO PARA SINCRONIZAR CON LA ESCRITURA DE LOS FICHEROS
+                values = Modulacion.queue.get()
+                continue
             elif values[0] == 0:
-            for str in values[1:]:
-                self.g.write(str)
-                self.g.flush()
+                for str in values[1:]:
+                    self.g.write(str)
+                    self.g.flush()
+                continue
             else:
-            strf,strg,gases = values[1],values[2],values[3]
+                strf,strg,gases = values[1],values[2],values[3]
             strgasesid,strgases = '',''
+
             for gas in gases:
                 strgasesid+=str(gas)+' '
                 strgases+=Modulacion.odorantes[gas]+' '
@@ -260,9 +259,9 @@ class Modulacion(object):
         self.event_write_thread.set() #CASO NECESARIO CUANDO SE QUIERE MATAR AL HILO, PARA QUE EL PROGRAMA NO FINALICE SIN ACABAR CON EL HILO PRIMERO
         return 
     
-    def inicializar_ficheros_puertos_hilos(self,path,sw,samplesinicio,ct,nfile,nfolder,vsaodrs,arg_extra=None):
-        ruta_fichero,ruta_fichero_data,ruta_fichero_tyh = Modulacion.create_files(self,nfile,path,nfolder,samplesinicio)
-        self.f,self.g = os.fdopen(os.open(ruta_fichero, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644), 'w'),os.fdopen(os.open(ruta_fichero_data, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644), 'w')
+    def inicializar_ficheros_puertos_hilos(self,path,succion,sw,samplesinicio,ct,nfile,nfolder,vsaodrs,arg_extra=None):
+        ruta_fichero_data,ruta_fichero = Modulacion.create_files(self,nfile,path,nfolder,samplesinicio)
+        self.f,self.g = os.fdopen(os.open(ruta_fichero_data, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644), 'w'),os.fdopen(os.open(ruta_fichero, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644), 'w')
         
         Modulacion.queue.put([0,'Ruta Fichero: %s\n'%(ruta_fichero),'Ruta Fichero de datos: %s\n'%(ruta_fichero_data)])
         
@@ -286,7 +285,7 @@ class Modulacion(object):
 
     def cierre_hilos(self):
         #Enviamos al hilo de escritura un -1, que es la senial de que finalice, y esperamos para asegurarnos de que acaba
-        Modulacion.queue.put(EXIT)
+        Modulacion.queue.put(Modulacion.EXIT)
         Modulacion.event.wait()
 
         #Esperamos a que el hilo de TyH acabe
@@ -305,7 +304,7 @@ class Modulacion(object):
 
         for arg in zip(self.succiones,self.switchs,self.samples_ini,self.cte,self.name_files,
             self.name_folders,self.vecs_open_valves,self.vecs_anal_odort,self.sleeps,*args):
-            self.inicializar_ficheros_puertos_hilos()
+            self.inicializar_ficheros_puertos_hilos(arg[0],arg[1],arg[2],arg[3],arg[4],arg[5],arg[7],arg[9:])
             #self.apertura_escritura_ficheros(arg[1],arg[2],arg[3],arg[4],arg[5],arg[7],arg[9:])
             #self.inicializar_hilos_puertos(arg[0],arg[1],arg[2],arg[3],arg[4],arg[5],arg[6],arg[7],arg[9:])
             #self.capturas_muestras_iniciales(arg[2],arg[9:])
@@ -323,7 +322,7 @@ class Modulacion(object):
         signal.signal(signal.SIGUSR1, handler_signal)
 
     def iniciar_captura_datos(self):
-        signal.signal(signal.SIGUSR1, handler_signal)
+        signal.signal(signal.SIGUSR1, self.handler_signal)
         Thread(target=self.captura_datos).start() # Creo el hilo de captura de datos y lo inicio
         self.hilo_escritura_datos()
         return
@@ -407,7 +406,7 @@ class Puro(Modulacion):
         Modulacion.queue.put([0,"Valor de la resistencia de carga: %d\n"%(Puro.Rl_2600)])
     
     def inicializar_ficheros_puertos_hilos(self,switch,samplesinicio,ct,nfile,nfolder,vsaodrs,arg_extra=None):
-        super().inicializar_ficheros_puertos_hilos(Puro.path,switch,samplesinicio,ct,nfile,nfolder,vsaodrs,arg_extra)
+        super().inicializar_ficheros_puertos_hilos(Puro.path,switch,samplesinicio,ct,nfile,nfolder,vsaodrs)
         PWM.start(Puro.heatPin2600,100)
         Modulacion.queue.put([0,"%d %d %d %d"%(switch,samplesinicio,ct,len(vsaodrs))])
         ADC.setup()
@@ -547,8 +546,8 @@ class Regresion(Modulacion):
             "Pin ADC sensor: %s\n"%(self.sensorPin2600),
             "Valor de la resistencia de carga: %d\n"%(Regresion.Rl_2600)])
 
-    def inicializar_ficheros_puertos_hilos(self,suc,sw,samplesinicio,ct,nfile,nfolder,vsovs,vsaodrs,arg_extra=None):
-        super().inicializar_hilos_puertos(suc)
+    def inicializar_ficheros_puertos_hilos(self,suc,sw,samplesinicio,ct,nfile,nfolder,vsaodrs,arg_extra=None):
+        super().inicializar_ficheros_puertos_hilos(Regresion.path,suc,sw,samplesinicio,ct,nfile,nfolder,vsaodrs)
         ADC.setup()
         PWM.start(Regresion.heatPin2600,arg_extra[0]) 
         Modulacion.queue.put([2,"%d %d %d %d"%(switch,samplesinicio,ct,len(vsaodrs))])

@@ -21,11 +21,28 @@ tipos_modulacion = {1:modulacion.Puro,2:modulacion.Regresion,3:modulacion.Martin
 #tipos_representacion = {1:graficas.plot_grafs_diccionary,2:graficas.plot_elems_grafs_diccionary,3:graficas.plot_elems_div_grafs_diccionary}
 #tipos_representacion_martinelli = {1:graficas.plot_martinelli,2:graficas.plot_martinelli_time_pulses,3:graficas.plot_martinelli_div_graf}
 
+#Se comprueba que los datos introducidos estén acotados entre los valores deseados
+def comprobacion_datos_introducidos(mod,experiment_data_dict):
+    
+    #Caso base, opciones comunes
+    for suc,sw,sini in zip(experiment_data_dict[tc.SSUCCION],experiment_data_dict[tc.SSWESTIM],experiment_data_dict[tc.SSINICIO]):
+        if suc > MAXSUCCION or suc < MINSUCCION or sw < MINSWICHT or (mod != 3 and sini < MINSAMPLESINIO):
+            print ('PARAMETROS(S) INCORRECTO(S).\n Por favor revise los parametros introducidos y vuelva a empezar')
+            exit(1)
+
+    #Caso de regresion
+    if mod == 2:
+        for tend,he in zip(experiment_data_dict[tc.STEND],experiment_data_dict[tc.SHTSENSOR]):
+            if he < MINHEAT or he > MAXHEAT or tend < MINTENDENCIA:
+                print ('PARAMETROS(S) INCORRECTO(S).\n Por favor revise los parametros introducidos y vuelva a empezar')
+                exit(1)
+
+
 def help():
-    print("Ayuda para la ejecución de PyHuele")
-    print("Forma para la ejecución: sudo PyHuele arg1 arg2")
-    print("arg1:\n\t1: para la captura desde PyHuele\n\t2: para la captura desde GPyHuele\n\t3: para el envio de la señal para pausar/continuar la captura de odorantes")
-    print("arg2: Fichero de configuración para la ejecución")
+    print("Ayuda para la ejecucion de PyHuele")
+    print("Forma para la ejecucion: sudo python3 PyHuele arg1 arg2")
+    print("arg1:\n\t1: para la captura desde PyHuele\n\t2: para la captura desde GPyHuele\n\t3: para el envio de la senal para pausar/continuar la captura de odorantes")
+    print("arg2: Fichero de configuracion para la ejecucion")
 
 def main():
 
@@ -34,44 +51,34 @@ def main():
         exit()
 
     # Opcion de enviar una senial al programa en ejecucion
-    if sys.argv[1] == 3:
+    if len(sys.argv) == 2 and int(sys.argv[1]) == 3:
         try:
             f = open("file_daemon","r")
         except FileNotFoundError:
-            print("No se encuentra ejecutando el programa de captura\n")
+            print("El programa no se encuentra capturando datos actualmente\n")
             exit()
             
         pid = int(f.readline())
         signal.pthread_kill(pid,signal.SIGUSR1)
         f.close()
     
-    path_config_experiment = sys.argv[2]
-    path_config_platform = sys.argv[3]
+    path_config_experiment = sys.argv[1]
+    path_config_platform = sys.argv[2]
 
     if sys.argv[1] == 1:
-    	mod,experiment_data_dict,platform_data_dict = tc.leer_ficheros_graphicPyHuele(path_config_experiment,path_config_platform)
+        mod,experiment_data_dict,platform_data_dict = tc.leer_ficheros_graphicPyHuele(path_config_experiment,path_config_platform)
     else:
-	try:
-        	mod,experiment_data_dict,platform_data_dict = tc.tratamiento_datos(tc.leer_fichero_experimento(path_config_experiment),tc.leer_fichero_conf_plataforma(path_config_platform))
-	except:
-		print ("Se encontro un error al procesar los datos, compruebe que el fichero este bien escrito")
-		return exit(1)
-		
-        for suc,sw,sini in zip(experiment_data_dict[tc.SSUCCION],experiment_data_dict[tc.SSWESTIM],experiment_data_dict[tc.SSINICIO]):
-            if suc > MAXSUCCION or suc < MINSUCCION or sw < MINSWICHT or (mod != 3 and sini < MINSAMPLESINIO):
-	        print ('PARAMETROS(S) INCORRECTO(S).\n Por favor revise los parametros introducidos y vuelva a empezar')
-	        exit(1)
-
-        if mod == 2:
-            for tend,he in zip(experiment_data_dict[tc.STEND],experiment_data_dict[tc.SHTSENSOR]):
-	        if he < MINHEAT or he > MAXHEAT or tend < MINTENDENCIA:
-	            print ('PARAMETROS(S) INCORRECTO(S).\n Por favor revise los parametros introducidos y vuelva a empezar')
-		    exit(1)
-
+        try:
+                mod,experiment_data_dict,platform_data_dict = tc.tratamiento_datos(tc.leer_fichero_experimento(path_config_experiment),tc.leer_fichero_conf_plataforma(path_config_platform))
+        except:
+                print ("Se encontro un error al procesar los datos, compruebe que el fichero este bien escrito")
+                return exit(1)
+                
+    comprobacion_datos_introducidos(mod,experiment_data_dict)
     modul = tipos_modulacion[mod](experiment_data_dict,platform_data_dict)
     path = modul.iniciar_captura_datos()
 
     return
 
 if __name__ == '__main__':
-	main()
+        main()
