@@ -2,7 +2,7 @@
 #!/usr/bin/python
 
 from datetime import datetime, date
-import sys
+import sys,os
 import modulaciones as modulacion
 import tratamiento_cadenas as tc
 import signal
@@ -51,16 +51,23 @@ def main():
         exit()
 
     # Opcion de enviar una senial al programa en ejecucion
+    #print("Argumentos pasados: ",sys.argv,len(sys.argv),int(sys.argv[1]))
     if len(sys.argv) == 2 and int(sys.argv[1]) == 3:
+        print("HOLA ESTOY DENTRO-QUITAR AL ACABAR")
         try:
-            f = open("file_daemon","r")
+            f = open("file_daemon.txt","r")
         except FileNotFoundError:
-            print("El programa no se encuentra capturando datos actualmente\n")
+            print("El programa no se encuentra capturando datos actualmente")
             exit()
             
         pid = int(f.readline())
-        signal.pthread_kill(pid,signal.SIGUSR1)
+        print("ABRO EL FICHERO-QUITAR AL ACABAR",pid)
+        os.kill(pid,signal.SIGUSR1)
+        #signal.pthread_kill(pid,signal.SIGUSR1)
+        print("ENVIO LA SENIAL-QUITAR AL ACABAR\n")
         f.close()
+        print("Senial enviada con exito")
+        exit()
     
     path_config_experiment = sys.argv[1]
     path_config_platform = sys.argv[2]

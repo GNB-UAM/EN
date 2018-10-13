@@ -64,8 +64,8 @@ class Modulacion(object):
         Modulacion.electrpos = config_platform[tc.SVALPOS]
         Modulacion.capturas_iniciales = [4] if Modulacion.electrpos != 'R' else [1,2,3]
         Modulacion.queue = qu.Queue() # Creo la cola de mensaje global
-        Modulacion.event_TyH = Event() # Evento para sincronizar los hilos de captura y de escritura
-        Modulacion.event_TyH.set() # Lo ponemos a 1 para evitar un bloqueo
+        #Modulacion.event_TyH = Event() # Evento para sincronizar los hilos de captura y de escritura
+        #Modulacion.event_TyH.set() # Lo ponemos a 1 para evitar un bloqueo
         Modulacion.event_write_thread = Event() 
         self.activar_GPIO_valvulas() # Puede ser un foco de problemas, puede que haya que cambiarlo
 
@@ -100,7 +100,7 @@ class Modulacion(object):
         os.dup2(so.fileno(), sys.stdout.fileno())
         os.dup2(se.fileno(), sys.stderr.fileno())
 
-        Modulacion.file_daemon = open('file_daemon','w+')
+        Modulacion.file_daemon = open('file_daemon.txt','w+')
         Modulacion.file_daemon.write("%d\n" % os.getpid())
         Modulacion.file_daemon.close()
 
@@ -176,6 +176,7 @@ class Modulacion(object):
     def reset(self,heatPin):
         
         # Me sincronizo con el hilo de escritura para asegurarme de que ha tenido tiempo para escribir todo
+        Modulacion.queue.put([0,"Experimento finalizado con exito. Fecha de finalizacion: %s\n"%(datetime.now())])
         Modulacion.queue.put(Modulacion.SYNC) 
         Modulacion.event_write_thread.wait() 
         
@@ -184,7 +185,6 @@ class Modulacion(object):
         PWM.stop(heatPin)
         PWM.cleanup()
         fecha_fin = datetime.now()
-        Modulacion.queue.put([0,"Experimento finalizado con éxito. Fecha de finalización: %s\n"%(datetime.now())])
         self.f.close()
         self.g.close()
         return
@@ -205,12 +205,12 @@ class Modulacion(object):
         #Lectura humedad y temperatura
         while getattr(self.thread,"do_run",True):
             # Fijo bloqueo para actualizar valores de TyH
-            self.event_TyH.wait()
+            #self.event_TyH.wait()
             tick_HT = time.time()
             self.humidity, self.temperature = DHT.read_retry(Modulacion.sensorTemp22,Modulacion.Temp22,30,1,None)
             t_HT = time.time()-tick_HT
             instante = datetime.now()
-            self.event_TyH.set() # Finalizo bloqueo una vez que he actualizado los valores
+            #self.event_TyH.set() # Finalizo bloqueo una vez que he actualizado los valores
             
             #Cuanto duerme en funcion de lo que tarde en H y T
             if t_HT > Modulacion.SLEEP_tyh:
@@ -234,6 +234,8 @@ class Modulacion(object):
         values = Modulacion.queue.get()
         print("Cogo el valor",values)
         while(values != Modulacion.EXIT):
+            if self.f.closed == True:
+                continue
             if values == Modulacion.SYNC: #CASO NECESARIO PARA SINCRONIZAR CON LA ESCRITURA DE LOS FICHEROS
                 self.event_write_thread.set()
             elif values[0] == 0:
@@ -247,11 +249,12 @@ class Modulacion(object):
             else:
                 strf,strg,gases = values[0],values[1],values[2]
                 strgasesid,strgases = '',''
-
-                for gas in gases:
+                print("LOS GASES A ESCRIBIR SON: ",gases)
+                for gas in gases: # Puede haber un fallo a la hora de escribir
                     strgasesid+=str(gas)+' '
                     strgases+=Modulacion.odorantes[gas]+' '
             
+                print("LAS STRINGS DE GASES A ESCRIBIR SON: ",strgasesid,strgases)
                 # Se selecciona hasta el caracter -1 para no escoger el último espacio
                 strf+=strgasesid+strgases[:-1]+'\n'
                 strg+=strgasesid+strgases[:-1]+'\n'
@@ -261,7 +264,8 @@ class Modulacion(object):
                 self.f.write(strf)
                 self.f.flush()
             values = Modulacion.queue.get()
-            print("Cogo el valor",values)
+            print("Cojo el valor",values,"\n")
+        print("SALGO DEL HILO DE ESCRITURA\n")
         self.event_write_thread.set() #CASO NECESARIO CUANDO SE QUIERE MATAR AL HILO, PARA QUE EL PROGRAMA NO FINALICE SIN ACABAR CON EL HILO PRIMERO
         return 
     
@@ -290,15 +294,19 @@ class Modulacion(object):
         Modulacion.cerrar_electrovalvulas(self)
 
     def cierre_hilos(self):
-        #Enviamos al hilo de escritura un -1, que es la senial de que finalice, y esperamos para asegurarnos de que acaba
+        #Enviamos al hilo de escritura un -2, que es la senial de que finalice, y esperamos para asegurarnos de que acaba
+        print("BORRO EL FILE_DAEMON")
+        os.remove("file_daemon.txt")
+
         Modulacion.queue.put(Modulacion.EXIT)
+        print("Espero a que la escritura acabe")
         Modulacion.event_write_thread.wait()
 
         #Esperamos a que el hilo de TyH acabe
         self.thread.do_run = False
         self.thread.join()
+        print("Espero a que la TyH acabe")
 
-        os.remove("file_daemon.txt")
         return
     
     def captura_aire(self,heatpin,sensorpin):
@@ -317,15 +325,16 @@ class Modulacion(object):
             self.captura_muestras(arg[1],arg[3],arg[6],arg[7],arg[2],arg[9:])
             self.reset(arg[8])
             if self.air_loop == True:
+                print("ESTOY AQUI DENTRO",self.air_loop)
                 self.captura_aire(heatpin,sensorpin)
 
         self.cierre_hilos()
         return None
     
     def handler_signal(self,signum,frame):
-        Modulacion.queue.put([0,"Se ha recibido una señal para el cambio de muestras"])
+        Modulacion.queue.put([0,"Se ha recibido una senial para el cambio de muestras"])
         self.air_loop = True if self.air_loop == False else False
-        signal.signal(signal.SIGUSR1, handler_signal)
+        signal.signal(signal.SIGUSR1, self.handler_signal)
 
     def iniciar_captura_datos(self):
         signal.signal(signal.SIGUSR1, self.handler_signal)
@@ -379,8 +388,8 @@ class Puro(Modulacion):
         
         time_end = time.time()
         # Pasamos a la cola los valores que va a escribir
-        Modulacion.queue.put(["%d %f %f 100 %s"%(self.muestras,valueTGS2600,RsTGS2600,instante_captura),
-            "%s[%d] Valor(mV): %f Rs(ohmios): %f Temperatura(%5V): 100 Instante_Captura: %s"%(string,self.muestras,valueTGS2600,RsTGS2600,instante_captura),
+        Modulacion.queue.put(["%d %f %f 100 %s "%(self.muestras,valueTGS2600,RsTGS2600,instante_captura),
+            "%s[%d] Valor(mV): %f Rs(ohmios): %f Temperatura(5V): 100 Instante_Captura: %s "%(string,self.muestras,valueTGS2600,RsTGS2600,instante_captura),
             gas])
         
         return (time_end - time_ini)
@@ -516,9 +525,9 @@ class Regresion(Modulacion):
         self.concentTGS2600.append(valueTGS2600)
         time_end = time.time()
     
-        Modulacion.queue.put(["%d %f %f %f %s %f %f %f %f %f"%
+        Modulacion.queue.put(["%d %f %f %f %s %f %f %f %f %f "%
                 (self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,instante_captura,slope, intercept, r_value, p_value, std_err1),
-            "%s[%d] Valor(mV): %f Rs(ohmios) %f Temperatura: %f Instante Captura: %s Slope: %f Intercept: %f R_Value: %f P_Value: %f std_err1: %f"%
+            "%s[%d] Valor(mV): %f Rs(ohmios) %f Temperatura: %f Instante Captura: %s Slope: %f Intercept: %f R_Value: %f P_Value: %f std_err1: %f "%
                 (string,self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,instante_captura,slope, intercept, r_value, p_value, std_err1),
             gas])
         return (time_end-time_ini)
