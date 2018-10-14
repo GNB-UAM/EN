@@ -30,8 +30,6 @@ class Modulacion(object):
     Temp22 = 'P8_11'
     odorantes = {1:'Metanol',2:'Etanol',3:'Butanol',4:'Aire'}
     TyH_sensor = {1:DHT.DHT11,2:DHT.DHT22,3:DHT.AM2302}
-    #print_electrovalvulas = {1:'ELECTROVALVULA: 1 METANOL \n',2:'ELECTROVALVULA: 2 ETANOL \n',3:'ELECTROVALVULA: 3 BUTANOL \n',4:'ELECTROVALVULA: 4 AIRE \n'}
-    #electrovalvulas = {1:'P8_10',2:'P8_12',3:'P8_14',4:'P8_16'}
     electrovalvulas = ['P8_10','P8_12','P8_14','P8_16']
 
     def __init__(self,config_experiment,config_platform,strings,**kwargs):
@@ -232,14 +230,12 @@ class Modulacion(object):
     def hilo_escritura_datos(self):
         
         values = Modulacion.queue.get()
-        print("Cogo el valor",values)
         while(values != Modulacion.EXIT):
             if self.f.closed == True:
                 continue
             if values == Modulacion.SYNC: #CASO NECESARIO PARA SINCRONIZAR CON LA ESCRITURA DE LOS FICHEROS
                 self.event_write_thread.set()
             elif values[0] == 0:
-                print(values[1:])
                 for string in values[1:]:
                     self.g.write(string)
                     self.g.flush()
@@ -249,12 +245,10 @@ class Modulacion(object):
             else:
                 strf,strg,gases = values[0],values[1],values[2]
                 strgasesid,strgases = '',''
-                print("LOS GASES A ESCRIBIR SON: ",gases)
                 for gas in gases: # Puede haber un fallo a la hora de escribir
                     strgasesid+=str(gas)+' '
                     strgases+=Modulacion.odorantes[gas]+' '
             
-                print("LAS STRINGS DE GASES A ESCRIBIR SON: ",strgasesid,strgases)
                 # Se selecciona hasta el caracter -1 para no escoger el último espacio
                 strf+=strgasesid+strgases[:-1]+'\n'
                 strg+=strgasesid+strgases[:-1]+'\n'
@@ -264,8 +258,6 @@ class Modulacion(object):
                 self.f.write(strf)
                 self.f.flush()
             values = Modulacion.queue.get()
-            print("Cojo el valor",values,"\n")
-        print("SALGO DEL HILO DE ESCRITURA\n")
         self.event_write_thread.set() #CASO NECESARIO CUANDO SE QUIERE MATAR AL HILO, PARA QUE EL PROGRAMA NO FINALICE SIN ACABAR CON EL HILO PRIMERO
         return 
     
@@ -294,18 +286,17 @@ class Modulacion(object):
         Modulacion.cerrar_electrovalvulas(self)
 
     def cierre_hilos(self):
-        #Enviamos al hilo de escritura un -2, que es la senial de que finalice, y esperamos para asegurarnos de que acaba
-        print("BORRO EL FILE_DAEMON")
+        
+        PWM.start(heatpin,100)
         os.remove("file_daemon.txt")
 
+        #Enviamos al hilo de escritura un -2, que es la senial de que finalice, y esperamos para asegurarnos de que acaba
         Modulacion.queue.put(Modulacion.EXIT)
-        print("Espero a que la escritura acabe")
         Modulacion.event_write_thread.wait()
 
         #Esperamos a que el hilo de TyH acabe
         self.thread.do_run = False
         self.thread.join()
-        print("Espero a que la TyH acabe")
 
         return
     
@@ -325,7 +316,6 @@ class Modulacion(object):
             self.captura_muestras(arg[1],arg[3],arg[6],arg[7],arg[2],arg[9:])
             self.reset(arg[8])
             if self.air_loop == True:
-                print("ESTOY AQUI DENTRO",self.air_loop)
                 self.captura_aire(heatpin,sensorpin)
 
         self.cierre_hilos()
@@ -630,8 +620,7 @@ class MPID(Modulacion): #ModulationPID
         MPID.path = config_elems[tc.SSDFOLDER] if config_elems[tc.SSDFOLDER] != '' else 'CAPTURAS/MPID'
 
         self.lastError,self.addError,self.temp = 0,0,0
-        print("AAAAAA",self.temperature_Max_Upper_Bound,self.temperature_Min_Upper_Bound,self.temperature_Max_Lower_Bound,self.temperature_Min_Lower_Bound)
-
+        
     def crear_target(self,Vmax, Vmin, periodo):
 
         A = (Vmax - Vmin)/2.0
