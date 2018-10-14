@@ -232,8 +232,9 @@ class Modulacion(object):
         values = Modulacion.queue.get()
         while(values != Modulacion.EXIT):
             if self.f.closed == True:
+                values = Modulacion.queue.get()
                 continue
-            if values == Modulacion.SYNC: #CASO NECESARIO PARA SINCRONIZAR CON LA ESCRITURA DE LOS FICHEROS
+            elif values == Modulacion.SYNC: #CASO NECESARIO PARA SINCRONIZAR CON LA ESCRITURA DE LOS FICHEROS
                 self.event_write_thread.set()
             elif values[0] == 0:
                 for string in values[1:]:
@@ -285,7 +286,7 @@ class Modulacion(object):
             
         Modulacion.cerrar_electrovalvulas(self)
 
-    def cierre_hilos(self):
+    def cierre_hilos(self,heatpin):
         
         PWM.start(heatpin,100)
         os.remove("file_daemon.txt")
@@ -318,7 +319,7 @@ class Modulacion(object):
             if self.air_loop == True:
                 self.captura_aire(heatpin,sensorpin)
 
-        self.cierre_hilos()
+        self.cierre_hilos(heatpin)
         return None
     
     def handler_signal(self,signum,frame):
@@ -620,7 +621,8 @@ class MPID(Modulacion): #ModulationPID
         MPID.path = config_elems[tc.SSDFOLDER] if config_elems[tc.SSDFOLDER] != '' else 'CAPTURAS/MPID'
 
         self.lastError,self.addError,self.temp = 0,0,0
-        
+        print("AAAAAA",self.temperature_Max_Upper_Bound,self.temperature_Min_Upper_Bound,self.temperature_Max_Lower_Bound,self.temperature_Min_Lower_Bound)
+
     def crear_target(self,Vmax, Vmin, periodo):
 
         A = (Vmax - Vmin)/2.0
