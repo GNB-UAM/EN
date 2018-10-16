@@ -151,48 +151,52 @@ def tratar_elemento(elem,rep):
     
     return rept_value
 
-def tratamiento_expresion(exp,rep,rep_izq=0):
-
-    lst,rept = [],1
-    for elem in exp.split(","):
-        #print("En tratamiento_elemento: ",elem,rep,rep_izq)
-        if elem == '':
+############################ NUEVO ############################
+def tratamiento_expresion(expresion):
+    expresion,lst,rept = re.split('(\{|\}\([0-9]+\)|\})',expresion)[::-1],[[]],[]
+    
+    for elem in expresion:
+        print(elem,lst)
+        if '}(' in elem:
+            rept.append(int(re.split('\}\(|\)',elem)[1]))
+            lst.append([])
+        elif '}' in elem:
+            lst.append([])
+            rept.append(1)
+        elif '{' in elem:
+            lst.append(lst.pop()*rept.pop()+lst.pop())
+        elif elem == '' or elem == ',':
             continue
-        elif elem[0] is '(':
-            rept = int(re.split("[()]",elem)[1]) # Take the two first elements
-            rep-=rep_izq*rept
-            #print("Caso que empieza por ()",rep,rep_izq,rept)
-        elif '-' in elem:
-            elems = elem.split('-')
-            lst_aux=[]
-            for elem in elems:
-                if '+' in elem:
-                    lst_aux_plus = []
-                    elem = elem.split('+')
-                    for el in elem:
-                        #print("WWWW ",el)
-                        lst_aux_plus+=tratar_elemento(el,rep)
-                    #print("EEEEEE",lst_aux_plus)
-                    lst_aux.append(lst_aux_plus)
-                    #print("AAAAAA",lst_aux_plus,lst_aux)
-                else:
-                    elem = tratar_elemento(elem,rep)
-                    lst_aux+=elem
-            rep-=1
-            lst.append(lst_aux)
-        elif '+' in elem:
-            lst_aux_plus,lst_aux = [],[]
-            elem = elem.split('+')
-            for el in elem:
-                lst_aux_plus+=tratar_elemento(el,rep)
-            lst_aux.append(lst_aux_plus)
-            lst.append(lst_aux)
         else:
-            elem = tratar_elemento(elem,rep)
-            rep-=len(elem)
-            lst+=elem
+            lst.append([elem]+lst.pop())
 
-    return lst,rept
+    return lst
+
+def tratar_elemento(expresion):
+
+    lst = []
+    for elem in expresion.split(','):
+        if ':' in elem:
+            elem = elem.split(':')
+            lst+=list(range(literal_eval(elem[0]),literal_eval(elem[1])+1,1)) if len(elem) == 2 else list(range(literal_eval(elem[0]),literal_eval(elem[1])+1,literal_eval(elem[2])))
+        elif '+' in elem or '-' in elem:
+            lst+=[[literal_eval(value)] if '+' not in value else [literal_eval(value2) for value2 in value.split('+')] for value in elem.split('-')]
+        elif '(' in elem:
+            elem,rept = re.split("[()]",elem)[:2] # Take the two first elements
+
+            for e in range(int(rept)):
+                try:
+                    lst.append(literal_eval(elem))
+                except:
+                    lst.append(elem)
+        elif elem == '':
+            continue
+        else:
+            try:
+                lst.append(literal_eval(elem))
+            except:
+                lst.append(elem)
+    return lst
 
 def leer_fichero(path):
 
@@ -205,13 +209,47 @@ def leer_fichero(path):
             if line[0] == '':
                 continue
             else:
-                if line[0].lower() == MODULACION: # CASO ESPECIAL
+                if line[0].lower() == MODULACION: # CASO ESPECIAL PONER EN POS. 0 PARA ACCESO RAPIDO
                     lst.insert(0,line[0].lower())
                     lstval.insert(0,line[1]) 
                 lst.append(line[0].lower())
                 lstval.append(line[1])
                 
     return lst,lstval
+
+def leer_fichero_configuracion(path):
+
+    lst_keywords,lst_values = leer_fichero(path)
+    dict,mod,keyword_mod = {},int(lst_values.pop(0))-1,lst_keywords.pop(0)
+    dict[keyword_mod[:2]+keyword_mod[-2:]] = mod
+    keywords_modulation = list(set(experiment_keywords[0]+experiment_keywords[mod]))
+
+    ### CARGO VALORES POR DEFECTO ###
+    dict[SVALPOS] = 'P'
+    dict[SSENTYPE] = 3
+    dict[SRDTIME] = 0.1
+
+    for keyword,val_keyword in zip(lst_keywords,lst_values):
+        if keyword not in platform_keywords and keyword not in keywords_modulation:
+            print ("The identificator " + keyword + " doesn't exits, please check the identificator is the correct")
+            return -1
+        elif keyword == 'martinelli_execution_mode' or keyword == 'martinelli_temperature_mode': 
+                dict[keyword[11:13]+keyword[-8:-6]] = val_keyword
+        else:
+            dict[keyword[:2]+keyword[-2:]] = val_keyword
+
+    rest_keywords_modulation = list(set(experiment_keywords[0]+experiment_keywords[mod])-set(lst_keywords))
+    for elem in rest_keywords_modulation:
+        dict[elem[:2]+elem[-2:]] = '0*'
+
+    rest_keywords_platform = list(set(platform_keywords)-set(lst_keywords)-set([VALPOS,SENTYPE,RDTIME]))
+    for elem in rest_keywords_platform:
+        dict[elem[:2]+elem[-2:]] = ''
+
+###############################################################
+
+def 
+
 
 def leer_fichero_experimento(path):
 
@@ -274,8 +312,8 @@ def experiment_data_treatmient(dict):
     # Guardamos los datos en el diccionario, los guardo todos primero, porque puede haber datos necesarios para tratar que reciba al final
     for key,value in dict.items():
         print("Key y value: ",key," ",value)
-        #if key in 
-
+        #if key in conf_values and key != SVALPOS:
+        #    dict[key] = platform_data_treatmient(key,value,mod,open_valves_vector)
         if key == SNMUESTRAS:
             dict[key] = evaluar_expresion(value,versiones.count(2))[0]
         elif key == SVECOPVAL:
@@ -319,7 +357,7 @@ def experiment_data_treatmient(dict):
     print("Fallo aqui?")
     return mod,dict,vecs_open_valves_ret
 
-def platform_data_treatmient(dict,mod,open_valves_vector):
+def platform_data_treatmient(dict,mod,open_valves_vector=None):
 
     for key,value in dict.items(): 
         if key == SRDPORT:
