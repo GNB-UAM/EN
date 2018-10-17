@@ -37,7 +37,6 @@ def comprobacion_datos_introducidos(mod,experiment_data_dict):
                 print ('PARAMETROS(S) INCORRECTO(S).\n Por favor revise los parametros introducidos y vuelva a empezar')
                 exit(1)
 
-
 def help():
     print("Ayuda para la ejecucion de PyHuele")
     print("Forma para la ejecucion: sudo python3 PyHuele arg1 arg2")
