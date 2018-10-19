@@ -215,23 +215,27 @@ def tratamiento_fichero_configuracion(dict):
         else:
             dict[key] = tratamiento_experimento(key,value,versiones,rept)
             
-    dict[SVECOPODR] = dict[SVECOPVAL].copy()
-    print("MUESTRAS",SNMUESTRAS,dict)
+    
+    #print("MUESTRAS",dict[SVECOPODR])
     # Creamos las series de odorantes que se van a analizar
-    vecs_open_valves_ret,vector_open_valves,muestras,pos_valvulas,valvulas_seleccionadas = [],dict[SVECOPVAL],dict.pop(SNMUESTRAS),dict[SVALPOS],dict[SELECPORTS]
+    vecs_open_valves_ret,vector_open_valves,muestras,pos_valvulas,valvulas_seleccionadas,nombre_valvulas_abrir = [],dict[SVECOPVAL],dict.pop(SNMUESTRAS),dict[SVALPOS],dict[SELECPORTS],[]
     for version in versiones:
         if version == ALL_TRANSITIONS:
-            vecs_open_valves_ret.append(todas_transiciones(valvulas_seleccionadas))
+            valvulas_abrir = todas_transiciones(valvulas_seleccionadas)
         elif version == ALEATORY:
-            vecs_open_valves_ret.append(crear_transiciones(muestras.pop(0),valvulas_seleccionadas))
+            valvulas_abrir = crear_transiciones(muestras.pop(0),valvulas_seleccionadas)
         elif version == USER_TRANSITIONS:
-            vecs_open_valves_ret.append(vector_open_valves.pop(0)
-                if pos_valvulas == 'P' else [list(set(range(1,len(valvulas_seleccionadas)+1))-set(lst)) for lst in vector_open_valves.pop(0)])
+            valvulas_abrir = vector_open_valves.pop(0)
         else:
-            print (versiones,lista_errores[3]%(version))
+            print (lista_errores[3]%(version))
             return exit(1)
 
+        vecs_open_valves_ret.append(valvulas_abrir
+            if pos_valvulas == 'P' else [list(set(range(1,len(valvulas_seleccionadas)+1))-set(lst)) for lst in valvulas_abrir])
+        nombre_valvulas_abrir.append(valvulas_abrir)
+
     dict[SVECOPVAL] = vecs_open_valves_ret
+    dict[SVECOPODR] = nombre_valvulas_abrir
 
     return mod,dict
 
@@ -304,10 +308,10 @@ def todas_transiciones(set_total_vales):
     m = np.triu(m)
     x = lst[m[m!=0]]
     d1 = lst[m.diagonal(1)].tolist()
-    print("CACA DE VACA",x,d1)
+    #print("CACA DE VACA",x,d1)
     ret = []
     for v in x:
-         print(v,d1)
+         #print(v,d1)
          if v.tolist() not in d1:
               ret.append([v[0]])
               ret.append([v[1]])
