@@ -16,10 +16,9 @@ import itertools
 
 ERR,OK = 0,1
 MODULACION,GRAFICAR,NEXPERIMENTOS = 'modulation','plot_mode','number_experiments'
-SUCCION,NMUESTRAS,SWESTIM,SINICIO,SBESTIM,NFILE,NFOLDER,SLEEP,VECOPVAL,VECOPODR,TEND,HTSENSOR,VEXPE,MMEXE,MMTEM,MTMIN,MTMAX = 'suction','number_samples','duration_stimulation','initial_samples','time_between_stimulus','name_file','name_folder','sleep','vector_open_valves','vector_analy_odor','tendency','heat_sensor','experiment_version','martinelli_execution_mode','martinelli_temperature_mode','minimun_temperature_martinelli','maximun_temperature_martinelli'
+SUCCION,NMUESTRAS,SWESTIM,SINICIO,SBESTIM,NFILE,NFOLDER,SLEEP,VECOPVAL,VECOPODR,TEND,HTSENSOR,VEXPE,MMEXE,MMTEM,MTMIN,MTMAX = 'suction','aleatory_number_samples','duration_stimulation','initial_samples','time_between_stimulus','name_file','name_folder','sleep','vector_open_valves','vector_analy_odor','tendency','heat_sensor','experiment_version','martinelli_execution_mode','martinelli_temperature_mode','minimun_temperature_martinelli','maximun_temperature_martinelli'
 PIDPERIOD,MAXLIMITUPPERBOUND,MINLIMITUPPERBOUND,MAXLIMITLOWERBOUND,MINLIMITLOWERBOUND,ALPHA,MAXPKVAL,MINPKVAL = 'period','upper_limit_max','upper_limit_min','lower_limit_max','lower_limit_min','alpha','max_peak_value','min_peak_value'
 RDPORT,HTPORT,MTPORT,RSTCE,SDFOLDER,VALPOS,NMUETS,SLEEPM,SLEEPTYH,VCC,TEMPPORT,TYHSENSOR,ELECPORTS,SENTYPE,RDTIME = 'reading_port','heating_port','motor_pin','resistance','sd_folder','valve_position','number_samples','sleep_time','sleep_time_th','vcc','th_reading_port','sensor_tyh_type','electrovalves_port','type_sensor','reading_time'
-set_total_vales = set([1,2,3,4])
 ALL_TRANSITIONS,ALEATORY,USER_TRANSITIONS = 1,2,3
 
 # Power, ground and reset ports
@@ -83,116 +82,74 @@ values = [[SNEXPERIMENTOS,SSUCCION,SNMUESTRAS,SSWESTIM,SSINICIO,SSBESTIM,SNFILE,
 
 conf_values = [SRDPORT,SHTPORT,SMTPORT,SRSTCE,SSDFOLDER,SVALPOS,SNMUETS,SSLEEPM,SSLEEPTYH,SVCC,STEMPPORT,STYHSENSOR,SELECPORTS,SSENTYPE,SRDTIME]
 
+lista_errores = ["El numero de elementos de la expresion: %s no coincide con el numero de experimentos introducidos",
+        "La expresion %s esta mal formada","El identificador %s no existe","La version del experimento: %d no es correcta",
+        "El puerto de lectura de datos debe ser un puerto ADC, revise la configuracion",
+        "El puerto de lectura de datos debe ser un puerto GPIO para martinelli, revise la configuracion",
+        "El puerto de calentamiento del sensor y el de control del motor deben ser puertos PWM, revise la configuracion"]
 
-def crear_arbol(exp):
-    exp = re.split("({|})",exp)
-    npadre,posnodo,lst,lstpadres,empty_space = -1,0,[],[],0
 
-    for elem in exp:
-        if elem is '{':
-            lst[npadre][2] = posnodo
-            lstpadres.append(npadre)
-        elif elem is '}':
-            npadre = lstpadres.pop()
-            posnodo=len(lst)
-            lst[npadre][3] = posnodo
-        else:
-            if elem == '':
-                empty_space = 1
-            lst.append([elem,npadre,None,None])
-            posnodo+=1
-            npadre=len(lst)-1
 
-    return lst,empty_space
-
-def evaluar_arbol(arbol,empty_space,pos_inicial,rep,len_izq=0):
-    if pos_inicial == None:
-        return [],1
-
-    value,rept = tratamiento_expresion(arbol[pos_inicial][0],rep,len_izq)#tratamiento_expresion(arbol[pos_inicial][0])
-    vizq,rizq = evaluar_arbol(arbol,empty_space,arbol[pos_inicial][2],rep-len(value))
-    vder,rder = evaluar_arbol(arbol,empty_space,arbol[pos_inicial][3],rep-len(value*rizq) if empty_space == 0 else rep-len(value*rizq)-len(vizq),len(vizq))
-    return value*rizq + vizq*rder+vder,rept#rep-len(value*rizq + vizq*rder+vder)
-
-def evaluar_expresion(exp,rep):
-    arbol,empty_space = crear_arbol(exp)
-    ret = evaluar_arbol(arbol,empty_space,0,rep)
-    #Comprobar que el numero de repeticiones es el correcto
-    return ret
-
-def tratar_elemento(elem,rep):
-       
-    #print("En tratar_elemento: ",elem)
-    rept_value = []
-    if elem == '':
-        return
-    elif '(' in elem:
-        elem,rept = re.split("[()]",elem)[:2] # Take the two first elements
-        #print("En tratar_elemento (: ",elem,rept)
-    elif '*' in elem:
-        elem,rept = re.sub('[*]','',elem),rep
-    elif ':' in elem:
-        elem,rept = re.split('[:]',elem),1
-        if len(elem) == 2:
-            v1,v2,v3 = literal_eval(elem[0]),literal_eval(elem[1]),1
-        else:
-            v1,v2,v3 = literal_eval(elem[0]),literal_eval(elem[1]),literal_eval(elem[2])
-        elem = list(range(v1,v2+1,v3)) #Ver como pasarlo a lista
-        rept_value+=elem
-        return rept_value
-    else:
-        rept=1
-        
-    for e in range(int(rept)):
-        try:
-            rept_value.append(literal_eval(elem))
-        except:
-            rept_value.append(elem)
-    
-    return rept_value
-
-def tratamiento_expresion(exp,rep,rep_izq=0):
-
-    lst,rept = [],1
-    for elem in exp.split(","):
-        #print("En tratamiento_elemento: ",elem,rep,rep_izq)
-        if elem == '':
+############################ NUEVO ############################
+def tratar_elemento(expresion,valvulas=False):
+    lst = []
+    for elem in expresion.split(','):
+        if ':' in elem:
+            ini,fin,salto = elem.split(':') if elem.count(':') == 2 else (elem+':1').split(':')
+            lst+=list(range(int(ini),int(fin)+int(salto),int(salto))) if valvulas == False else [[[int(i)]] for i in range(int(ini),int(fin)+int(salto),int(salto))]
+        elif '+' in elem or '-' in elem:
+            lst.append([tratar_elemento(value) if '+' not in value else [tratar_elemento(value2)[0] for value2 in value.split('+')] for value in elem.split('-')])
+        elif '(' in elem:
+            elem,rept = re.split("[()]",elem)[:2] # Take the two first elements
+            for e in range(int(rept)):
+                try:
+                    lst.append(literal_eval(elem) if valvulas == False else [[literal_eval(elem)]])
+                except:
+                    lst.append(elem)
+        elif elem == '':
             continue
-        elif elem[0] is '(':
-            rept = int(re.split("[()]",elem)[1]) # Take the two first elements
-            rep-=rep_izq*rept
-            #print("Caso que empieza por ()",rep,rep_izq,rept)
-        elif '-' in elem:
-            elems = elem.split('-')
-            lst_aux=[]
-            for elem in elems:
-                if '+' in elem:
-                    lst_aux_plus = []
-                    elem = elem.split('+')
-                    for el in elem:
-                        #print("WWWW ",el)
-                        lst_aux_plus+=tratar_elemento(el,rep)
-                    #print("EEEEEE",lst_aux_plus)
-                    lst_aux.append(lst_aux_plus)
-                    #print("AAAAAA",lst_aux_plus,lst_aux)
-                else:
-                    elem = tratar_elemento(elem,rep)
-                    lst_aux+=elem
-            rep-=1
-            lst.append(lst_aux)
-        elif '+' in elem:
-            lst_aux_plus,lst_aux = [],[]
-            elem = elem.split('+')
-            for el in elem:
-                lst_aux_plus+=tratar_elemento(el,rep)
-            lst_aux.append(lst_aux_plus)
-            lst.append(lst_aux)
         else:
-            elem = tratar_elemento(elem,rep)
-            rep-=len(elem)
-            lst+=elem
+            try:
+                lst.append(literal_eval(elem) if valvulas == False else [[literal_eval(elem)]])
+            except:
+                lst.append(elem)
+    return lst
 
-    return lst,rept
+def tratamiento_expresion(expresion,repeticiones,valvulas=False):
+    expresion,lst,rept = re.split('(\{|\}\([0-9]+\)|\})',expresion)[::-1],[[]],[]
+   
+    try:
+        for elem in expresion:
+            if '}(' in elem:
+                rept.append(int(re.split('\}\(|\)',elem)[1]))
+                lst.append([])
+            elif '}' in elem:
+                lst.append([])
+                rept.append(1)
+            elif '{' in elem:
+                lst.append(lst.pop()*rept.pop()+lst.pop())
+            elif elem == '' or elem == ',':
+                continue
+            else:
+                lst.append(tratar_elemento(elem,valvulas)+lst.pop())
+    except:
+        print(lista_errores[1]%(expresion))
+        return exit(1)
+
+    lst = lst.pop()
+    if isinstance(lst[-1],str) and '*' in lst[-1]:
+        try:
+            value = literal_eval(lst[-1][:-1])
+        except:
+            value = lst[-1][:-1]
+        lst.pop()
+        lst+=[value for i in range(repeticiones-len(lst))]
+
+    if len(lst) != repeticiones:
+        print(lista_errores[0]%(''.join(expresion[::-1]))) # Se reconstruye la cadena inicial
+        return exit(1)
+        
+    return lst
 
 def leer_fichero(path):
 
@@ -205,7 +162,7 @@ def leer_fichero(path):
             if line[0] == '':
                 continue
             else:
-                if line[0].lower() == MODULACION: # CASO ESPECIAL
+                if line[0].lower() == MODULACION: # CASO ESPECIAL PONER EN POS. 0 PARA ACCESO RAPIDO
                     lst.insert(0,line[0].lower())
                     lstval.insert(0,line[1]) 
                 lst.append(line[0].lower())
@@ -213,168 +170,108 @@ def leer_fichero(path):
                 
     return lst,lstval
 
-def leer_fichero_experimento(path):
+def leer_fichero_configuracion(path):
 
     lst_keywords,lst_values = leer_fichero(path)
     dict,mod,keyword_mod = {},int(lst_values.pop(0))-1,lst_keywords.pop(0)
     dict[keyword_mod[:2]+keyword_mod[-2:]] = mod
     keywords_modulation = list(set(experiment_keywords[0]+experiment_keywords[mod]))
 
-    for keyword,val_keyword in zip(lst_keywords,lst_values):
-        if keyword not in keywords_modulation:
-            print ("The identificator " + keyword + " doesn't exits, please check the identificator is the correct")
-            return -1
-        else:
-            if keyword == 'martinelli_execution_mode' or keyword == 'martinelli_temperature_mode': 
-                dict[keyword[11:13]+keyword[-8:-6]] = val_keyword
-            else:
-                dict[keyword[:2]+keyword[-2:]] = val_keyword
-
-    rest_keywords_modulation = list(set(experiment_keywords[0]+experiment_keywords[mod])-set(lst_keywords))
-    for elem in rest_keywords_modulation:
-        dict[elem[:2]+elem[-2:]] = '0*'
-    
-    print("DICT en leer_fichero_experimento :",dict)
-    return dict
-
-def leer_fichero_conf_plataforma(path):
-
-    lst_keywords,lst_values = leer_fichero(path)
-    dict = {}
-
     ### CARGO VALORES POR DEFECTO ###
     dict[SVALPOS] = 'P'
     dict[SSENTYPE] = 3
     dict[SRDTIME] = 0.1
+    dict[SELECPORTS] = ['P8_10','P8_12','P8_14','P8_16']
 
     for keyword,val_keyword in zip(lst_keywords,lst_values):
-        if keyword not in platform_keywords:
-            print ("The identificator " + keyword + " doesn't exits, please check the identificator is the correct")
-            return exit(1)
+        if keyword not in platform_keywords and keyword not in keywords_modulation:
+            print (lista_errores[2]%(keyword))
+            return -1
+        elif keyword == 'martinelli_execution_mode' or keyword == 'martinelli_temperature_mode': 
+                dict[keyword[11:13]+keyword[-8:-6]] = val_keyword
         else:
             dict[keyword[:2]+keyword[-2:]] = val_keyword
 
-    rest_keywords_platform = list(set(platform_keywords)-set(lst_keywords)-set([VALPOS,SENTYPE,RDTIME]))
+    rest_keywords_modulation = list(set(experiment_keywords[0]+experiment_keywords[mod])-set(lst_keywords))
+    for elem in rest_keywords_modulation:
+        dict[elem[:2]+elem[-2:]] = '0*'
+
+    rest_keywords_platform = list(set(platform_keywords)-set(lst_keywords)-set([VALPOS,SENTYPE,RDTIME,ELECPORTS]))
     for elem in rest_keywords_platform:
         dict[elem[:2]+elem[-2:]] = ''
 
-    print("DICT en leer_fichero_conf_plataforma :",dict)
     return dict
 
-def experiment_data_treatmient(dict):
+def tratamiento_fichero_configuracion(dict):
 
     rept,mod = int(dict.pop(SNEXPERIMENTOS)),int(dict.pop(SMODULACION))
-    versiones = evaluar_expresion(dict.pop(SVEXPE),rept)[0]
-    
-
-    if versiones == ERR:
-        print ("Error in the element: " + VEXPE + ", check the number of repeticions from this element")
-        return exit(1)
+    versiones = tratamiento_expresion(dict.pop(SVEXPE),rept)
 
     # Guardamos los datos en el diccionario, los guardo todos primero, porque puede haber datos necesarios para tratar que reciba al final
     for key,value in dict.items():
-        print("Key y value: ",key," ",value)
-        #if key in 
-
-        if key == SNMUESTRAS:
-            dict[key] = evaluar_expresion(value,versiones.count(2))[0]
-        elif key == SVECOPVAL:
-            # Apaño guarro para que funcione
-            flst,lsts = [],evaluar_expresion(value,versiones.count(3))[0]
-            for lst in lsts:
-                #print("LST",lst)
-                try:
-                    lst_aux = []
-                    for elem in lst:
-                        if type(elem) is list:
-                            lst_aux.append(elem)
-                        else:
-                            lst_aux.append([elem])
-                    flst.append(lst_aux)
-                except:
-                    flst.append([[lst]])
-            dict[key] = flst
+        #print(key,value)
+        if key in conf_values:
+            dict[key] = tratamiento_plataforma(key,value,mod)
         else:
-            val = evaluar_expresion(value,rept)[0]
-            dict[key] = val if len(val) == rept else ERR
-        
-        if dict[key] == ERR:
-            print ("Error in the element: " + key + ", check the number of repeticions from the element")
-            return exit(1)
-
-    vecs_open_valves_ret,vector_open_valves,muestras = [],dict[SVECOPVAL],dict.pop(SNMUESTRAS)
-
+            dict[key] = tratamiento_experimento(key,value,versiones,rept)
+            
+    
+    #print("MUESTRAS",dict[SVECOPODR])
+    # Creamos las series de odorantes que se van a analizar
+    vecs_open_valves_ret,vector_open_valves,muestras,pos_valvulas,valvulas_seleccionadas,nombre_valvulas_abrir = [],dict[SVECOPVAL],dict.pop(SNMUESTRAS),dict[SVALPOS],dict[SELECPORTS],[]
     for version in versiones:
-        print("version: ",version)
         if version == ALL_TRANSITIONS:
-            vecs_open_valves_ret.append(todas_transiciones())
+            valvulas_abrir = todas_transiciones(valvulas_seleccionadas)
         elif version == ALEATORY:
-            vecs_open_valves_ret.append(crear_transiciones(muestras.pop(0)))
+            valvulas_abrir = crear_transiciones(muestras.pop(0),valvulas_seleccionadas)
         elif version == USER_TRANSITIONS:
-            vecs_open_valves_ret.append(vector_open_valves.pop(0))
+            valvulas_abrir = vector_open_valves.pop(0)
         else:
-            print (versiones,"Error in version introduce, it does not exits")
+            print (lista_errores[3]%(version))
             return exit(1)
+
+        vecs_open_valves_ret.append(valvulas_abrir
+            if pos_valvulas == 'P' else [list(set(range(1,len(valvulas_seleccionadas)+1))-set(lst)) for lst in valvulas_abrir])
+        nombre_valvulas_abrir.append(valvulas_abrir)
+
+    dict[SVECOPVAL] = vecs_open_valves_ret
+    dict[SVECOPODR] = nombre_valvulas_abrir
+
+    return mod,dict
+
+def tratamiento_experimento(key,value,versiones,repeticiones):
+
+    if key == SNMUESTRAS:
+        expr = tratamiento_expresion(value,versiones.count(2))
+    elif key == SVECOPVAL:
+        expr = tratamiento_expresion(value,versiones.count(3),True)
+    else:
+        expr = tratamiento_expresion(value,repeticiones)
     
-    print("Fallo aqui?")
-    return mod,dict,vecs_open_valves_ret
+    return expr
 
-def platform_data_treatmient(dict,mod,open_valves_vector):
-
-    for key,value in dict.items(): 
-        if key == SRDPORT:
-            if value not in ADCS and mod != 3:
-                print ('El puerto de lectura de datos debe ser un puerto ADC, revise la configuracion')
-                return exit(1)
-            elif  mod == 3 and (value in ADCS or value in PWMS or value in PGRPORTS):
-                print ('El puerto de lectura de datos debe ser un puerto GPIO para martinelli, revise la configuracion')
-                return exit(1)
-        elif (key == SHTPORT or key == SMTPORT) and value not in PWMS:
-            print ('El puerto de calentamiento del sensor y el de control del motor deben ser puertos PWM, revise la configuracion')
+def tratamiento_plataforma(key,value,mod):
+    
+    if key == SRDPORT:
+        if value not in ADCS and mod != 3:
+            print (lista_errores[4])
             return exit(1)
-        elif key == SELECPORTS:
-            dict[key] = value.split(",")
-            set_total_vales = set(range(1,len(value.split(","))+1))
-        else:   
-            dict[key] = value
-    
-    #Tal vez se pueda mejorar
-    # Caso contrario, para que una valvula deje pasar odorante, hay que cerrarla y abrir las demás
-    if dict[SVALPOS] == 'R':
-        rlsts = []
-        for lst in open_valves_vector:
-            rlst = [list(set_total_vales - set(valves)) for valves in lst]
-            rlsts.append(rlst)
-        open_valves_vector = rlsts
+        elif  mod == 3 and (value in ADCS or value in PWMS or value in PGRPORTS):
+            print (lista_errores[5])
+            return exit(1)
+        else:
+            return value
+    elif (key == SHTPORT or key == SMTPORT) and value not in PWMS:
+        print (lista_errores[6])
+        return exit(1)
+    elif key == SELECPORTS:
+        expr = value.split(",") if isinstance(value,list) == False else value
+    else:   
+        expr = value
 
-    return dict,open_valves_vector
+    return expr
 
-def tratamiento_datos(experiment_data_dict,platform_data_dict):
-
-    mod,experiment_data_dict,open_valves_vector = experiment_data_treatmient(experiment_data_dict)
-    print("Aqui llego bien")
-    platform_data_dict,open_valves_vector_final = platform_data_treatmient(platform_data_dict,mod,open_valves_vector)
-
-    experiment_data_dict[SVECOPVAL] = open_valves_vector_final
-    experiment_data_dict[SVECOPODR] = open_valves_vector
-
-    return mod,experiment_data_dict,platform_data_dict
-
-def get_files_folder(folder,ext=".dat"):
-
-    lstFiles = []
-    lstDir = os.walk(folder)
-
-    for root, dirs, files in lstDir:
-        for fichero in files:
-            (nombreFichero, extension) = os.path.splitext(fichero)
-            if(extension == ext):
-                lstFiles.append(folder+nombreFichero+extension)
-
-    lstFiles.sort()
-    return lstFiles
-
-def crear_transiciones(switch):
+def crear_transiciones(switch,total_valvulas):
     """
     Crea transiciones entre gases
 
@@ -388,16 +285,10 @@ def crear_transiciones(switch):
     devolver -- array con los gases que van a entrar al sensor
 
     """
-    ret_gases = []
 
-    while len(ret_gases) < switch:
-        random = rn.randint(1,len(set_total_vales))
-        if len(ret_gases) == 0 or random != ret_gases[len(ret_gases)-1]:
-            ret_gases.append([random])
+    return [[rn.randint(1,len(total_valvulas))] for i in range(switch)]
 
-    return ret_gases
-
-def todas_transiciones():
+def todas_transiciones(set_total_vales):
     """
     Crea transiciones entre gases
 
@@ -417,10 +308,10 @@ def todas_transiciones():
     m = np.triu(m)
     x = lst[m[m!=0]]
     d1 = lst[m.diagonal(1)].tolist()
-    print("CACA DE VACA",x,d1)
+    #print("CACA DE VACA",x,d1)
     ret = []
     for v in x:
-         print(v,d1)
+         #print(v,d1)
          if v.tolist() not in d1:
               ret.append([v[0]])
               ret.append([v[1]])
@@ -435,9 +326,6 @@ def todas_transiciones():
     ret.append(ret[0])
     
     return ret
-
-def obtener_ruta(path,ahora,folder,folder2):
-    return path + "/" + ahora.strftime('%Y%m%d') + "/" + folder + "/" + folder2 + "/"
 
 # Problema al pasar de string al tipo correspondiente
 def leer_ficheros_graphicPyHuele(path_experiment_config,path_platform_config):
