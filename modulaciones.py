@@ -597,7 +597,7 @@ class MPID(Modulacion): #ModulationPID
     #'Muestra PID['+str(contador)+']\n>>Target: '+str(subtarget)+'V >> Valor:'+str(value)+'V >> Rs: '+str(RStgs2600)+' Temperatura: '+str(temp)+' '+' TemperaturaPID: '+str(temperaturaPID)+' '+str(captura)+'\n'
 
     def __init__(self,config_experiment,**kwargs):
-        super().__init__(config_experiment,config_elems,MPID.strings,**kwargs)
+        super().__init__(config_experiment,**kwargs)
         self.periods = config_experiment[tc.SPIDPERIOD]
         self.heat = config_experiment[tc.SHTSENSOR]
         self.Kp = list(np.array(config_experiment[tc.SALPHA])*0.6)
