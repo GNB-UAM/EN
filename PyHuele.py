@@ -51,8 +51,7 @@ def main():
 
     # Opcion de enviar una senial al programa en ejecucion
     #print("Argumentos pasados: ",sys.argv,len(sys.argv),int(sys.argv[1]))
-    if len(sys.argv) == 2 and int(sys.argv[1]) == 3:
-        print("HOLA ESTOY DENTRO-QUITAR AL ACABAR")
+    if len(sys.argv) == 2 and sys.argv[1] == '3':
         try:
             f = open("file_daemon.txt","r")
         except FileNotFoundError:
@@ -60,28 +59,24 @@ def main():
             exit()
             
         pid = int(f.readline())
-        print("ABRO EL FICHERO-QUITAR AL ACABAR",pid)
         os.kill(pid,signal.SIGUSR1)
-        #signal.pthread_kill(pid,signal.SIGUSR1)
-        print("ENVIO LA SENIAL-QUITAR AL ACABAR\n")
         f.close()
-        print("Senial enviada con exito")
         exit()
     
     path_config_experiment = sys.argv[1]
-    path_config_platform = sys.argv[2]
-
+    
     if sys.argv[1] == 1:
         mod,experiment_data_dict,platform_data_dict = tc.leer_ficheros_graphicPyHuele(path_config_experiment,path_config_platform)
     else:
         try:
-                mod,experiment_data_dict,platform_data_dict = tc.tratamiento_datos(tc.leer_fichero_experimento(path_config_experiment),tc.leer_fichero_conf_plataforma(path_config_platform))
+                mod,experiment_data_dict = tc.tratamiento_fichero_configuracion(
+                        tc.leer_fichero_configuracion(path_config_experiment))
         except:
                 print ("Se encontro un error al procesar los datos, compruebe que el fichero este bien escrito")
                 return exit(1)
                 
     comprobacion_datos_introducidos(mod,experiment_data_dict)
-    modul = tipos_modulacion[mod](experiment_data_dict,platform_data_dict)
+    modul = tipos_modulacion[mod](experiment_data_dict)
     path = modul.iniciar_captura_datos()
 
     return

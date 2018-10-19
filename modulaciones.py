@@ -32,7 +32,7 @@ class Modulacion(object):
     TyH_sensor = {1:DHT.DHT11,2:DHT.DHT22,3:DHT.AM2302}
     electrovalvulas = ['P8_10','P8_12','P8_14','P8_16']
 
-    def __init__(self,config_experiment,config_platform,strings,**kwargs):
+    def __init__(self,config_experiment,**kwargs):
         super().__init__(**kwargs) #Comprobar que no falle por esto
         Modulacion.daemonizar()
         
@@ -49,17 +49,17 @@ class Modulacion(object):
         self.f,self.g,self.h,self.thiread = None,None,None,None
         self.humidity, self.temperature = None,None
         self.air_loop = False
-        Modulacion.motorPin = config_platform[tc.SMTPORT] if config_platform[tc.SMTPORT] != '' else 'P9_21'
-        Modulacion.NM = int(config_platform[tc.SNMUETS]) if config_platform[tc.SNMUETS] != '' else 10
-        Modulacion.T = float(config_platform[tc.SRDTIME]) if config_platform[tc.SRDTIME] != '' else 0.1
-        Modulacion.SLEEP = int(config_platform[tc.SSLEEPM]) if config_platform[tc.SSLEEPM] != '' else 1
-        Modulacion.SLEEP_tyh = int(config_platform[tc.SSLEEPTYH]) if config_platform[tc.SSLEEPTYH] != '' else 59
-        Modulacion.Vcc = int(config_platform[tc.SVCC]) if config_platform[tc.SVCC] != '' else 5
-        Modulacion.Temp22 = config_platform[tc.STEMPPORT] if config_platform[tc.STEMPPORT] != '' else 'P8_11'
-        Modulacion.electrovalvulas = config_platform[tc.SELECPORTS] if config_platform[tc.SELECPORTS] != [''] else ['P8_10','P8_12','P8_14','P8_16']
-        Modulacion.sensorTemp22 = Modulacion.TyH_sensor[config_platform[tc.SSENTYPE]]
+        Modulacion.motorPin = config_experiment[tc.SMTPORT] if config_experiment[tc.SMTPORT] != '' else 'P9_21'
+        Modulacion.NM = int(config_experiment[tc.SNMUETS]) if config_experiment[tc.SNMUETS] != '' else 10
+        Modulacion.T = float(config_experiment[tc.SRDTIME]) if config_experiment[tc.SRDTIME] != '' else 0.1
+        Modulacion.SLEEP = int(config_experiment[tc.SSLEEPM]) if config_experiment[tc.SSLEEPM] != '' else 1
+        Modulacion.SLEEP_tyh = int(config_experiment[tc.SSLEEPTYH]) if config_experiment[tc.SSLEEPTYH] != '' else 59
+        Modulacion.Vcc = int(config_experiment[tc.SVCC]) if config_experiment[tc.SVCC] != '' else 5
+        Modulacion.Temp22 = config_experiment[tc.STEMPPORT] if config_experiment[tc.STEMPPORT] != '' else 'P8_11'
+        Modulacion.electrovalvulas = config_experiment[tc.SELECPORTS] if config_experiment[tc.SELECPORTS] != [''] else ['P8_10','P8_12','P8_14','P8_16']
+        Modulacion.sensorTemp22 = Modulacion.TyH_sensor[config_experiment[tc.SSENTYPE]]
         Modulacion.tsub = Modulacion.T / Modulacion.NM
-        Modulacion.electrpos = config_platform[tc.SVALPOS]
+        Modulacion.electrpos = config_experiment[tc.SVALPOS]
         Modulacion.capturas_iniciales = [4] if Modulacion.electrpos != 'R' else [1,2,3]
         Modulacion.queue = qu.Queue() # Creo la cola de mensaje global
         #Modulacion.event_TyH = Event() # Evento para sincronizar los hilos de captura y de escritura
@@ -126,9 +126,9 @@ class Modulacion(object):
         fileString_data = nameFile+"_dat1_"+datenow.strftime('%Y-%m-%d_%H-%M-%S')+".dat"
         #fileString_tyh = "TyH"+nameFile+"_data_"+datenow.strftime('%Y-%m-%d_%H-%M-%S')+".data"
 
-        ruta1 = tc.obtener_ruta(path,self.time_mark,folder,"dat") #Ruta de salida       
+        ruta1 = path+"/"+self.time_mark.strftime("%Y%m%d")+"/"+folder+"/dat/" #Ruta de salida       
         if not os.path.exists(ruta1): os.makedirs(ruta1,mode=0o755)     #Si la ruta no existe, se crea
-        ruta2 = tc.obtener_ruta(path,self.time_mark,folder,"txt") #Ruta de salida
+        ruta2 = path+"/"+self.time_mark.strftime("%Y%m%d")+"/"+folder+"/txt/" #Ruta de salida
         if not os.path.exists(ruta2): os.makedirs(ruta2,mode=0o755)     #Si la ruta no existe, se crea
         #ruta3 = tc.obtener_ruta(path,self.time_mark,folder,"TyH") #Ruta de salida
         #if not os.path.exists(ruta3): os.makedirs(ruta3,mode=0o755)     #Si la ruta no existe, se crea
@@ -323,7 +323,7 @@ class Modulacion(object):
         return None
     
     def handler_signal(self,signum,frame):
-        Modulacion.queue.put([0,"Se ha recibido una senial para el cambio de muestras"])
+        Modulacion.queue.put([0,"Se ha recibido una senial para el cambio de muestras\n"])
         self.air_loop = True if self.air_loop == False else False
         signal.signal(signal.SIGUSR1, self.handler_signal)
 
@@ -343,12 +343,12 @@ class Puro(Modulacion):
     #strings nuevos = 'Valor(mV): %f, Rs(ohmios): %f, Temperatura(%5V): 100, instante_captura: %s'
     #strings = ['Valor(mV):','Rs(ohmios):','Temperatura(%5V): 100 inst_captura:']
 
-    def __init__(self,config_experiment='',config_platform='',**kwargs):
+    def __init__(self,config_experiment,**kwargs):
         super().__init__(config_experiment,config_platform,Puro.strings,**kwargs)
-        Puro.Rl_2600 = int(config_platform[tc.SRSTCE]) if config_platform[tc.SRSTCE] != '' else 440
-        Puro.sensorPin2600 = config_platform[tc.SRDPORT] if config_platform[tc.SRDPORT] != '' else 'P9_38'
-        Puro.heatPin2600 = config_platform[tc.SHTPORT] if config_platform[tc.SHTPORT] != '' else ''
-        Puro.path = config_platform[tc.SSDFOLDER] if config_platform[tc.SSDFOLDER] != '' else 'CAPTURAS/PURO'
+        Puro.Rl_2600 = int(config_experiment[tc.SRSTCE]) if config_experiment[tc.SRSTCE] != '' else 440
+        Puro.sensorPin2600 = config_experiment[tc.SRDPORT] if config_experiment[tc.SRDPORT] != '' else 'P9_38'
+        Puro.heatPin2600 = config_experiment[tc.SHTPORT] if config_experiment[tc.SHTPORT] != '' else ''
+        Puro.path = config_experiment[tc.SSDFOLDER] if config_experiment[tc.SSDFOLDER] != '' else 'CAPTURAS/PURO'
         self.muestras = 0
 
     def valor_sensor(self,string,gas):
@@ -416,7 +416,7 @@ class Puro(Modulacion):
         PWM.start(Puro.heatPin2600,100)
         Modulacion.queue.put([0,"%d %d %d %d"%(switch,samplesinicio,ct,len(vsaodrs))])
         ADC.setup()
-        self.file_TGS2600(tc.obtener_ruta(Puro.path,self.time_mark,nfolder,''),nfile+".txt",
+        self.file_TGS2600(Puro.path+"/"+self.time_mark.strftime("%Y%m%d")+"/"+nfolder+"/",nfile+".txt",
             nfile+".dat","TyH"+nfile+".data",vsaodrs,suc,5,float(samplesinicio + (ct*(len(vsovs)+1)) + (len(vsovs)*sw)),sw,ct,samplesinicio)
 
     def captura_muestras(self,sw,ct,vsovs,vsaodrs,samplesinicio,args_extra=None):
@@ -452,17 +452,17 @@ class Regresion(Modulacion):
     path = "CAPTURAS/REGRESION"
     strings = ['Valor(mV):','Rs(ohmios):','Temperatura(%5V):','inst_captura: ','slope:','intercept:','r_value:','p_value:','std_err1:']
 
-    def __init__(self,config_experiment='',config_platform='',**kwargs):
-        super().__init__(config_experiment,config_platform,Regresion.strings,**kwargs)
+    def __init__(self,config_experiment,**kwargs):
+        super().__init__(config_experiment,**kwargs)
         self.tendencia = config_experiment[tc.STEND]
         self.heat = config_experiment[tc.SHTSENSOR]
         self.x=[]
         self.concentTGS2600=[]
         self.muestras = 0
-        Regresion.Rl_2600 = int(config_platform[tc.SRSTCE]) if config_platform[tc.SRSTCE] != '' else 440
-        Regresion.sensorPin2600 = config_platform[tc.SRDPORT] if config_platform[tc.SRDPORT] != '' else 'P9_40'
-        Regresion.heatPin2600 = config_platform[tc.SHTPORT] if config_platform[tc.SHTPORT] != '' else 'P9_22'
-        Regresion.path = config_platform[tc.SSDFOLDER] if config_platform[tc.SSDFOLDER] != '' else 'CAPTURAS/REGRESION'
+        Regresion.Rl_2600 = int(config_experiment[tc.SRSTCE]) if config_experiment[tc.SRSTCE] != '' else 440
+        Regresion.sensorPin2600 = config_experiment[tc.SRDPORT] if config_experiment[tc.SRDPORT] != '' else 'P9_40'
+        Regresion.heatPin2600 = config_experiment[tc.SHTPORT] if config_experiment[tc.SHTPORT] != '' else 'P9_22'
+        Regresion.path = config_experiment[tc.SSDFOLDER] if config_experiment[tc.SSDFOLDER] != '' else 'CAPTURAS/REGRESION'
             
     def valor_sensor(self,temperature_TGS2600,string,opcion,gas,samplesinicio,tendencia):
         """
@@ -557,7 +557,7 @@ class Regresion(Modulacion):
         ADC.setup()
         PWM.start(Regresion.heatPin2600,arg_extra[0]) 
         Modulacion.queue.put([2,"%d %d %d %d"%(sw,samplesinicio,ct,len(vsaodrs))])
-        self.file_TGS2600(tc.obtener_ruta(Regresion.path,self.time_mark,nfolder,''),
+        self.file_TGS2600(Regresion.path+"/"+self.time_mark.strftime("%Y%m%d")+"/"+nfolder+"/",
             nfile+".txt",nfile+".dat","TyH"+nfile+".data",vsaodrs,suc,(arg_extra[0]*0.01*5),
             float(samplesinicio + (ct*(len(vsovs)+1)) + (len(vsovs)*sw)),sw,ct,samplesinicio,arg_extra[1])
        
@@ -596,7 +596,7 @@ class MPID(Modulacion): #ModulationPID
 
     #'Muestra PID['+str(contador)+']\n>>Target: '+str(subtarget)+'V >> Valor:'+str(value)+'V >> Rs: '+str(RStgs2600)+' Temperatura: '+str(temp)+' '+' TemperaturaPID: '+str(temperaturaPID)+' '+str(captura)+'\n'
 
-    def __init__(self,config_experiment='',config_elems='',**kwargs):
+    def __init__(self,config_experiment,**kwargs):
         super().__init__(config_experiment,config_elems,MPID.strings,**kwargs)
         self.periods = config_experiment[tc.SPIDPERIOD]
         self.heat = config_experiment[tc.SHTSENSOR]
@@ -615,13 +615,12 @@ class MPID(Modulacion): #ModulationPID
         self.errorControl = 0.05
         self.muestras = 0
 
-        MPID.Rl_2600 = int(config_elems[tc.SRSTCE]) if config_elems[tc.SRSTCE] != '' else 440
-        MPID.sensorPin2600 = config_elems[tc.SRDPORT] if config_elems[tc.SRDPORT] != '' else 'P9_40'
-        MPID.heatPin2600 = config_elems[tc.SHTPORT] if config_elems[tc.SHTPORT] != '' else 'P9_22'
-        MPID.path = config_elems[tc.SSDFOLDER] if config_elems[tc.SSDFOLDER] != '' else 'CAPTURAS/MPID'
+        MPID.Rl_2600 = int(config_experiment[tc.SRSTCE]) if config_experiment[tc.SRSTCE] != '' else 440
+        MPID.sensorPin2600 = config_experiment[tc.SRDPORT] if config_experiment[tc.SRDPORT] != '' else 'P9_40'
+        MPID.heatPin2600 = config_experiment[tc.SHTPORT] if config_experiment[tc.SHTPORT] != '' else 'P9_22'
+        MPID.path = config_experiment[tc.SSDFOLDER] if config_experiment[tc.SSDFOLDER] != '' else 'CAPTURAS/MPID'
 
         self.lastError,self.addError,self.temp = 0,0,0
-        print("AAAAAA",self.temperature_Max_Upper_Bound,self.temperature_Min_Upper_Bound,self.temperature_Max_Lower_Bound,self.temperature_Min_Lower_Bound)
 
     def crear_target(self,Vmax, Vmin, periodo):
 
@@ -825,7 +824,7 @@ class MPID(Modulacion): #ModulationPID
         PWM.start(MPID.heatPin2600,arg_extra[0])
         Modulacion.queue.put([0,"%d %d %d %d"%(switch,samplesinicio,ct,len(vsaodrs))])
         ADC.setup()
-        self.file_TGS2600(tc.obtener_ruta(MPID.path,self.time_mark,nfolder,''),nfile+".txt",nfile+".dat","TyH"+nfile+".data",
+        self.file_TGS2600(MPID.path+"/"+self.time_mark.strftime("%Y%m%d")+"/"+nfolder,nfile+".txt",nfile+".dat","TyH"+nfile+".data",
             vsaodrs,suc,str(arg_extra[1]*0.01*5)+"V",float(samplesinicio + (ct*(len(vsovs)+1)) + (len(vsovs)*sw)),sw,ct,samplesinicio,
             arg_extra[0],arg_extra[2],arg_extra[3],arg_extra[4],arg_extra[5],arg_extra[6],arg_extra[7],arg_extra[8],arg_extra[9], arg_extra[10])
         self.crear_target(arg_extra[9], arg_extra[10], arg_extra[0])        
