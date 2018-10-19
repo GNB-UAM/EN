@@ -357,16 +357,3 @@ def leer_ficheros_graphicPyHuele(path_experiment_config,path_platform_config):
         fil.close()
 
     return mod,experiment_data_dict,platform_data_dict
-
-###############################################################
-# PRUEBAS #
-print(tratamiento_expresion('1',1))
-print(tratamiento_expresion('7,{8,{3,2},{4,5},7,8,9,{6,4}(7),{9,6}(3),{6,7},8}(2),5',64))
-print(tratamiento_expresion('7,{{{3,2}(3),5,{4(5),6}(2)}},1,2,3,4,7,{{4,5},7,8,9,{6,4}(7),{9,6}(3),{6,7}}(2),5',80))
-print(tratamiento_expresion('7,{{{3,2}(3),5,{4(5),6}(2)}},1,2,3,4,7,{{4,5},7,8,9,{6,4}(7),{9,6}(3),{6,7}}(2),5',80))
-print(tratamiento_expresion('1:4:1',4,True))
-print(tratamiento_expresion('7-3-5+4,5(2)',3))
-print(tratamiento_expresion('4,{4-1+2-4}(18),{4-2-4}(18),{4-3-4}(18)',55,True))
-print(tratamiento_expresion('4(3),7,3,5(2),3:5,5-6-7-8+5(2)',11,True))
-print(tratamiento_expresion('7,{{{{0,{{{{{{{3,2}}}}}}}}}}}(2),5',8))
-print(tratamiento_expresion('7,{3(2),5(6)}(2),2(2)',19))
