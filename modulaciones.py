@@ -450,7 +450,6 @@ class Regresion(Modulacion):
     sensorPin2600 = 'P9_40'
     heatPin2600 = 'P9_22'
     path = "CAPTURAS/REGRESION"
-    strings = ['Valor(mV):','Rs(ohmios):','Temperatura(%5V):','inst_captura: ','slope:','intercept:','r_value:','p_value:','std_err1:']
 
     def __init__(self,config_experiment,**kwargs):
         super().__init__(config_experiment,**kwargs)
@@ -759,10 +758,11 @@ class MPID(Modulacion): #ModulationPID
         RSTGS = ((Modulacion.Vcc*MPID.Rl_2600)/(valueTGS2600/1000.0)) - MPID.Rl_2600
 
         time_end = time.time()
-        Modulacion.queue.put(["%d %f %f %f %f %s "%
+        print(string,self.muestras,valueTGS2600,RSTGS,self.temp,temperaturaPID,instante_captura,instante_captura)
+        Modulacion.queue.put(["%d %f %f %f %f %f %s "%
                 (self.muestras,subtarget,valueTGS2600,RSTGS,self.temp,temperaturaPID,instante_captura),
-            "%s[%d] Target(mV): %f Valor(mV): %f Rs(ohmios) %f Temperatura(%5V): %f Temperatura_PID(%5V): %f Instante Captura: %s"%
-                (string,self.muestras,valueTGS2600,RSTGS,self.temp,temperaturaPID,instante_captura,instante_captura),
+            "%s[%d] Target(mV): %f Valor sensor(mV): %f Rs(ohmios) %f Temperatura: %f Temperatura_PID: %f Instante Captura: %s"%
+                (string,self.muestras,subtarget,valueTGS2600,RSTGS,self.temp,temperaturaPID,instante_captura),
             gas])
 
         self.lastError, self.addError, self.temp = error,ei,temperaturaPID
