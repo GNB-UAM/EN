@@ -820,14 +820,14 @@ class MPID(Modulacion): #ModulationPID
             "Valor pico inicial maximo: %f\n"%(maximum_peak_value),
             "Valor pico inicial minimo: %f\n"%(minimum_peak_value)])
     
-    def inicializar_ficheros_puertos_hilos(self,suc,switch,samplesinicio,ct,nfile,nfolder,vsovs,vsaodrs,arg_extra=None):
-        super().inicializar_ficheros_puertos_hilos(MPID.path,suc,switch,samplesinicio,ct,nfile,nfolder,vsaodrs)
+    def inicializar_ficheros_puertos_hilos(self,suc,sw,samplesinicio,ct,nfile,nfolder,vsovs,vsaodrs,arg_extra=None):
+        super().inicializar_ficheros_puertos_hilos(MPID.path,suc,sw,samplesinicio,ct,nfile,nfolder,vsaodrs)
         PWM.start(MPID.heatPin2600,arg_extra[0])
-        Modulacion.queue.put([0,"%d %d %d %d"%(switch,samplesinicio,ct,len(vsaodrs))])
+        Modulacion.queue.put([0,"%d %d %d %d"%(sw,samplesinicio,ct,len(vsaodrs))])
         ADC.setup()
         self.file_TGS2600(MPID.path+"/"+self.time_mark.strftime("%Y%m%d")+"/"+nfolder+"/",
             nfile+".txt",nfile+".dat","TyH"+nfile+".data",
-            vsaodrs,suc,str(arg_extra[1]*0.01*5)+"V",float(samplesinicio + (ct*(len(vsovs)+1)) + (len(vsovs)*sw)),sw,ct,samplesinicio,
+            vsaodrs,suc,(arg_extra[1]*0.01*5),float(samplesinicio + (ct*(len(vsovs)+1)) + (len(vsovs)*sw)),sw,ct,samplesinicio,
             arg_extra[0],arg_extra[2],arg_extra[3],arg_extra[4],arg_extra[5],arg_extra[6],arg_extra[7],arg_extra[8],arg_extra[9], arg_extra[10])
         self.crear_target(arg_extra[9], arg_extra[10], arg_extra[0])        
 
@@ -851,17 +851,17 @@ class MPID(Modulacion): #ModulationPID
 
             time.sleep(Modulacion.SLEEP - (time.time() - time_ini))
             Modulacion.queue.put(["%d %f %f %f %s "%
-                (self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,instante_captura),
-            "Muestras_iniciales[%d] Valor(mV): %f Rs(ohmios) %f Temperatura(%5V): %f Instante Captura: %s "%
-                (string,self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,instante_captura),
+                (self.muestras,valueTGS2600,RSTGS,heat,instante_captura),
+            "Muestras_iniciales[%d] Valor(mV): %f Rs(ohmios) %f Temperatura: %f Instante Captura: %s "%
+                (self.muestras,valueTGS2600,RSTGS,heat,instante_captura),
             [4]])
             
         super().cerrar_electrovalvulas()
         return False
 
-    def captura_muestras(self,sw,ct,vsovs,vsaodrs,args_extra=None):
+    def captura_muestras(self,sw,ct,vsovs,vsaodrs,samplesinicio,args_extra=None):
         # Realizamos las capturas de las muestras iniciales
-        auxiliar_capturas_muestras_iniciales(args_extra[1]) # Le pasamos las muestras iniciales
+        self.auxiliar_capturas_muestras_iniciales(samplesinicio) # Le pasamos las muestras iniciales
         
         # Realizamos las capturas de las muestras
         super().captura_muestras()
@@ -871,7 +871,7 @@ class MPID(Modulacion): #ModulationPID
             self.captura_odorante(Modulacion.capturas_iniciales,[4],ct,"Muestra_entre_gases",args_extra[0],args_extra[2],args_extra[3],args_extra[4],args_extra[5],args_extra[6],args_extra[7],args_extra[8])
             self.captura_odorante(vsov,vsaodr,sw,"Muestra_gases",args_extra[0],args_extra[2],args_extra[3],args_extra[4],args_extra[5],args_extra[6],args_extra[7],args_extra[8])
 
-        self.captura_odorante(Modulacion.capturas_iniciales,[4],ct,"Muestra_entre_gases",args_extra[0],args_extra[2],args_extra[3],args_extra[4],args_extra[5],args_extra[6],args_extra[7],args_extra[8])
+        self.captura_odorante(Modulacion.capturas_muestras_iniciales,[4],ct,"Muestra_entre_gases",args_extra[0],args_extra[2],args_extra[3],args_extra[4],args_extra[5],args_extra[6],args_extra[7],args_extra[8])
 
     def reset(self,sle,arg_extra=None):
         super().reset(MPID.heatPin2600)
@@ -883,9 +883,9 @@ class MPID(Modulacion): #ModulationPID
         
     def captura_datos(self):
 
-        super().captura_datos(self.periods,self.heat,self.Kp,self.Kd,self.Ki,self.temperature_Max_Upper_Bound,
-            self.temperature_Min_Upper_Bound,self.temperature_Max_Lower_Bound,self.temperature_Min_Lower_Bound,
-            self.max_peak_value,self.min_peak_value)
+        super().captura_datos(MPID.heatPin2600,MPID.sensorPin2600,self.periods,self.heat,self.Kp,self.Kd,self.Ki,
+            self.temperature_Max_Upper_Bound,self.temperature_Min_Upper_Bound,self.temperature_Max_Lower_Bound,
+            self.temperature_Min_Lower_Bound,self.max_peak_value,self.min_peak_value)
         return MPID.path
 
 # REVISARLO A FONDO -> COSAS COMO VSADR, PARA MARCAR LOS NOMBRES DE LAS VALVULAS QUE ABRO
