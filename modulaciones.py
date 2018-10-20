@@ -373,11 +373,12 @@ class Puro(Modulacion):
         # Hacemos la media
         valueTGS2600=value/Modulacion.NM
         instante_captura=datetime.now()
+        time_end = time.time()
                 
         #Se calcula el valor de la resistencia interna del sensor
         RsTGS2600=((Modulacion.Vcc*Puro.Rl_2600)/(valueTGS2600/1000.))-Puro.Rl_2600
         
-        time_end = time.time()
+        
         # Pasamos a la cola los valores que va a escribir
         Modulacion.queue.put(["%d %f %f 100 %s "%(self.muestras,valueTGS2600,RsTGS2600,instante_captura),
             "%s[%d] Valor(mV): %f Rs(ohmios): %f Temperatura(5V): 100 Instante_Captura: %s "%(string,self.muestras,valueTGS2600,RsTGS2600,instante_captura),
@@ -475,10 +476,11 @@ class Regresion(Modulacion):
         opcion -- 1 para las SAMPLESINICIO muestras, 2 para capturas tantas muestras como hayamos indicado
         gas -- array que contiene los gases de la muestra que se captura
         """
-        time_ini = time.time()
+        
         if opcion == 1:
             PWM.set_duty_cycle(Regresion.heatPin2600, temperature_TGS2600)
 
+        time_ini = time.time()
         value=0
         ADC.read(Regresion.sensorPin2600) #la primera medida es erronea por el bug
 
@@ -490,6 +492,7 @@ class Regresion(Modulacion):
         valueTGS2600=value/Modulacion.NM
         instante_captura=datetime.now()
 
+        time_end = time.time()
         slope, intercept, r_value, p_value, std_err1 = 0,0,0,0,0
         #Adaptacion temperatura
         if opcion == 2:
@@ -508,7 +511,7 @@ class Regresion(Modulacion):
             #Reset de setup PWM
             PWM.set_duty_cycle(Regresion.heatPin2600, temperature_TGS2600)
 
-        time_end = time.time()
+        
         #Se calcula el valor de la resistencia interna del sensor
         RsTGS2600=((Modulacion.Vcc*Regresion.Rl_2600)/(valueTGS2600/1000.))-Regresion.Rl_2600
 
@@ -738,6 +741,7 @@ class MPID(Modulacion): #ModulationPID
         valueTGS2600=value/Modulacion.NM
         instante_captura=datetime.now()
 
+        time_end = time.time()
         output,error,ei = self.PID_controller(Kp,Kd,Ki,subtarget,valueTGS2600,self.lastError,self.addError)
         
         t1 = (output - max(self.target))*(((temperaturaMinLowerBound - temperaturaMaxUpperBound)/-max(self.target)))+temperaturaMaxUpperBound if error < -0.5 or error > 0.5 else 0
@@ -757,8 +761,6 @@ class MPID(Modulacion): #ModulationPID
         PWM.set_duty_cycle(MPID.heatPin2600, temperaturaPID)
         RSTGS = ((Modulacion.Vcc*MPID.Rl_2600)/(valueTGS2600/1000.0)) - MPID.Rl_2600
 
-        time_end = time.time()
-        print(string,self.muestras,valueTGS2600,RSTGS,self.temp,temperaturaPID,instante_captura,instante_captura)
         Modulacion.queue.put(["%d %f %f %f %f %f %s "%
                 (self.muestras,subtarget,valueTGS2600,RSTGS,self.temp,temperaturaPID,instante_captura),
             "%s[%d] Target(mV): %f Valor sensor(mV): %f Rs(ohmios) %f Temperatura: %f Temperatura_PID: %f Instante Captura: %s"%
