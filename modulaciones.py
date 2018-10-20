@@ -509,12 +509,13 @@ class Regresion(Modulacion):
             #Reset de setup PWM
             PWM.set_duty_cycle(Regresion.heatPin2600, temperature_TGS2600)
 
+        time_end = time.time()
         #Se calcula el valor de la resistencia interna del sensor
         RsTGS2600=((Modulacion.Vcc*Regresion.Rl_2600)/(valueTGS2600/1000.))-Regresion.Rl_2600
 
         self.x.append(self.muestras)
         self.concentTGS2600.append(valueTGS2600)
-        time_end = time.time()
+        
     
         Modulacion.queue.put(["%d %f %f %f %s %f %f %f %f %f "%
                 (self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,instante_captura,slope, intercept, r_value, p_value, std_err1),
@@ -819,12 +820,13 @@ class MPID(Modulacion): #ModulationPID
             "Valor pico inicial maximo: %f\n"%(maximum_peak_value),
             "Valor pico inicial minimo: %f\n"%(minimum_peak_value)])
     
-    def inicializar_ficheros_puertos_hilos(self,switch,samplesinicio,ct,nfile,nfolder,vsaodrs,arg_extra=None):
-        super().inicializar_ficheros_puertos_hilos(Puro.path,switch,samplesinicio,ct,nfile,nfolder,vsaodrs,arg_extra)
+    def inicializar_ficheros_puertos_hilos(self,suc,switch,samplesinicio,ct,nfile,nfolder,vsovs,vsaodrs,arg_extra=None):
+        super().inicializar_ficheros_puertos_hilos(MPID.path,suc,switch,samplesinicio,ct,nfile,nfolder,vsaodrs)
         PWM.start(MPID.heatPin2600,arg_extra[0])
         Modulacion.queue.put([0,"%d %d %d %d"%(switch,samplesinicio,ct,len(vsaodrs))])
         ADC.setup()
-        self.file_TGS2600(MPID.path+"/"+self.time_mark.strftime("%Y%m%d")+"/"+nfolder,nfile+".txt",nfile+".dat","TyH"+nfile+".data",
+        self.file_TGS2600(MPID.path+"/"+self.time_mark.strftime("%Y%m%d")+"/"+nfolder+"/",
+            nfile+".txt",nfile+".dat","TyH"+nfile+".data",
             vsaodrs,suc,str(arg_extra[1]*0.01*5)+"V",float(samplesinicio + (ct*(len(vsovs)+1)) + (len(vsovs)*sw)),sw,ct,samplesinicio,
             arg_extra[0],arg_extra[2],arg_extra[3],arg_extra[4],arg_extra[5],arg_extra[6],arg_extra[7],arg_extra[8],arg_extra[9], arg_extra[10])
         self.crear_target(arg_extra[9], arg_extra[10], arg_extra[0])        
