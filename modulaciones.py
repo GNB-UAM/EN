@@ -493,6 +493,7 @@ class Regresion(Modulacion):
         instante_captura=datetime.now()
 
         time_end = time.time()
+        print(time_end-time_ini)
         slope, intercept, r_value, p_value, std_err1 = 0,0,0,0,0
         #Adaptacion temperatura
         if opcion == 2:
@@ -742,6 +743,7 @@ class MPID(Modulacion): #ModulationPID
         instante_captura=datetime.now()
 
         time_end = time.time()
+        print(time_end-time_ini)
         output,error,ei = self.PID_controller(Kp,Kd,Ki,subtarget,valueTGS2600,self.lastError,self.addError)
         
         t1 = (output - max(self.target))*(((temperaturaMinLowerBound - temperaturaMaxUpperBound)/-max(self.target)))+temperaturaMaxUpperBound if error < -0.5 or error > 0.5 else 0
@@ -873,7 +875,7 @@ class MPID(Modulacion): #ModulationPID
             self.captura_odorante(Modulacion.capturas_iniciales,[4],ct,"Muestra_entre_gases",args_extra[0],args_extra[2],args_extra[3],args_extra[4],args_extra[5],args_extra[6],args_extra[7],args_extra[8])
             self.captura_odorante(vsov,vsaodr,sw,"Muestra_gases",args_extra[0],args_extra[2],args_extra[3],args_extra[4],args_extra[5],args_extra[6],args_extra[7],args_extra[8])
 
-        self.captura_odorante(Modulacion.capturas_muestras_iniciales,[4],ct,"Muestra_entre_gases",args_extra[0],args_extra[2],args_extra[3],args_extra[4],args_extra[5],args_extra[6],args_extra[7],args_extra[8])
+        self.captura_odorante(Modulacion.capturas_iniciales,[4],ct,"Muestra_entre_gases",args_extra[0],args_extra[2],args_extra[3],args_extra[4],args_extra[5],args_extra[6],args_extra[7],args_extra[8])
 
     def reset(self,sle,arg_extra=None):
         super().reset(MPID.heatPin2600)
