@@ -794,7 +794,7 @@ class MPID(Modulacion): #ModulationPID
 
             subtarget = self.target[self.muestras%periodo]
             ret_values = self.valor_sensor(string,vector_odorantes, subtarget, Kp, Kd, Ki, temperature_Max_Upper_Bound, temperature_Min_Lower_Bound)
-            if value_sleep < 1: time.sleep(Modulacion.SLEEP - ret_values[0])
+            if ret_values[0] < 1: time.sleep(Modulacion.SLEEP - ret_values[0])
             
             
             self.max_PID_temp,self.max_value = self.calculate_min_max_value(subtarget, ret_values[1], max, self.max_value, self.temp, self.max_PID_temp)
