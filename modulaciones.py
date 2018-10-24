@@ -373,12 +373,11 @@ class Puro(Modulacion):
         # Hacemos la media
         valueTGS2600=value/Modulacion.NM
         instante_captura=datetime.now()
-        time_end = time.time()
                 
         #Se calcula el valor de la resistencia interna del sensor
         RsTGS2600=((Modulacion.Vcc*Puro.Rl_2600)/(valueTGS2600/1000.))-Puro.Rl_2600
-        
-        
+        time_end = time.time()
+              
         # Pasamos a la cola los valores que va a escribir
         Modulacion.queue.put(["%d %f %f 100 %s "%(self.muestras,valueTGS2600,RsTGS2600,instante_captura),
             "%s[%d] Valor(mV): %f Rs(ohmios): %f Temperatura(5V): 100 Instante_Captura: %s "%(string,self.muestras,valueTGS2600,RsTGS2600,instante_captura),
@@ -492,8 +491,6 @@ class Regresion(Modulacion):
         valueTGS2600=value/Modulacion.NM
         instante_captura=datetime.now()
 
-        time_end = time.time()
-        print(time_end-time_ini)
         slope, intercept, r_value, p_value, std_err1 = 0,0,0,0,0
         #Adaptacion temperatura
         if opcion == 2:
@@ -515,6 +512,8 @@ class Regresion(Modulacion):
         
         #Se calcula el valor de la resistencia interna del sensor
         RsTGS2600=((Modulacion.Vcc*Regresion.Rl_2600)/(valueTGS2600/1000.))-Regresion.Rl_2600
+        time_end = time.time()
+        print(time_end-time_ini)
 
         self.x.append(self.muestras)
         self.concentTGS2600.append(valueTGS2600)
@@ -742,8 +741,6 @@ class MPID(Modulacion): #ModulationPID
         valueTGS2600=value/Modulacion.NM
         instante_captura=datetime.now()
 
-        time_end = time.time()
-        print(time_end-time_ini)
         output,error,ei = self.PID_controller(Kp,Kd,Ki,subtarget,valueTGS2600,self.lastError,self.addError)
         
         t1 = (output - max(self.target))*(((temperaturaMinLowerBound - temperaturaMaxUpperBound)/-max(self.target)))+temperaturaMaxUpperBound if error < -0.5 or error > 0.5 else 0
@@ -762,6 +759,8 @@ class MPID(Modulacion): #ModulationPID
 
         PWM.set_duty_cycle(MPID.heatPin2600, temperaturaPID)
         RSTGS = ((Modulacion.Vcc*MPID.Rl_2600)/(valueTGS2600/1000.0)) - MPID.Rl_2600
+        time_end = time.time()
+        print(time_end-time_ini)
 
         Modulacion.queue.put(["%d %f %f %f %f %f %s "%
                 (self.muestras,subtarget,valueTGS2600,RSTGS,self.temp,temperaturaPID,instante_captura),
@@ -853,8 +852,9 @@ class MPID(Modulacion): #ModulationPID
             valueTGS2600=value/Modulacion.NM
             instante_captura=datetime.now()
             RSTGS = ((Modulacion.Vcc*MPID.Rl_2600)/(valueTGS2600/1000.0)) - MPID.Rl_2600
+            time_end = time.time()
 
-            time.sleep(Modulacion.SLEEP - (time.time() - time_ini))
+            if time_end - time_ini < 1: time.sleep(Modulacion.SLEEP - (time_end - time_ini)) 
             Modulacion.queue.put(["%d %f %f %f %s "%
                 (self.muestras,valueTGS2600,RSTGS,heat,instante_captura),
             "Muestras_iniciales[%d] Valor(mV): %f Rs(ohmios) %f Temperatura: %f Instante Captura: %s "%
