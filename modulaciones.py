@@ -220,7 +220,8 @@ class Modulacion(object):
                 else:
                     Modulacion.queue.put([0,'Failed to get reading, Try again!'])
                     
-            time.sleep(Modulacion.SLEEP_tyh-(time.time()-tick_HT))
+            time_TH_end = time.time()
+            if Modulacion.SLEEP_tyh-(time_TH_end-tick_HT) < 1: time.sleep(Modulacion.SLEEP_tyh-(time_TH_end-tick_HT))
 
         return 0
 
