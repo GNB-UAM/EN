@@ -19,7 +19,6 @@ import signal
 
 class Modulacion(object):
 
-    SYNC,EXIT = -1,-2
     motorPin = 'P9_21'
     NM = 10 #Numero lecturas ADC
     T = 0.1 #Las NM lecturas se hacen en T segundos
@@ -91,9 +90,7 @@ class Modulacion(object):
             sys.exit(1)
 
         for f in sys.stdout, sys.stderr,sys.stdin: f.flush()
-        si = open("salida_in.txt", 'a+')
-        so = open("salida_out.txt", 'w')
-        se = open("salida_err.txt", 'w')
+        si,so,se = open("salida_in.txt", 'a+'),open("salida_out.txt", 'w'),open("salida_err.txt", 'w')
         os.dup2(si.fileno(), sys.stdin.fileno())
         os.dup2(so.fileno(), sys.stdout.fileno())
         os.dup2(se.fileno(), sys.stderr.fileno())
@@ -176,12 +173,13 @@ class Modulacion(object):
         
         # Me sincronizo con el hilo de escritura para asegurarme de que ha tenido tiempo para escribir todo
         self.g.write("Experimento finalizado con exito. Fecha de finalizacion: %s\n"%(datetime.now()))
-        
         self.cerrar_electrovalvulas()
         PWM.stop(Modulacion.motorPin)
         PWM.stop(heatPin)
         PWM.cleanup()
+        self.f.flush()
         self.f.close()
+        self.g.close()
         self.g.close()
         return
 
@@ -222,44 +220,6 @@ class Modulacion(object):
             if (time_TH_end-tick_HT) < 1: time.sleep(Modulacion.SLEEP_tyh-(time_TH_end-tick_HT))
 
         return 0
-
-    # Recibe una lista con un valor en la primera posición
-    # 0 - Escritura en fichero global
-    # 1 - Escritura en fichero de salida datos
-    def hilo_escritura_datos(self):
-        
-        values = Modulacion.queue.get()
-        while(values != Modulacion.EXIT):
-            if self.f.closed == True:
-                values = Modulacion.queue.get()
-                continue
-            elif values == Modulacion.SYNC: #CASO NECESARIO PARA SINCRONIZAR CON LA ESCRITURA DE LOS FICHEROS
-                self.event_write_thread.set()
-            elif values[0] == 0:
-                for string in values[1:]:
-                    self.g.write(string)
-                    self.g.flush()
-            elif values[0] == 2:
-                self.f.write(values[1])
-                self.f.flush()
-            else:
-                strf,strg,gases = values[0],values[1],values[2]
-                strgasesid,strgases = '',''
-                for gas in gases: # Puede haber un fallo a la hora de escribir
-                    strgasesid+=str(gas)+' '
-                    strgases+=Modulacion.odorantes[gas]+' '
-            
-                # Se selecciona hasta el caracter -1 para no escoger el último espacio
-                strf+=strgasesid+strgases[:-1]+'\n'
-                strg+=strgasesid+strgases[:-1]+'\n'
-
-                self.g.write(strg)
-                self.g.flush()
-                self.f.write(strf)
-                self.f.flush()
-            values = Modulacion.queue.get()
-        self.event_write_thread.set() #CASO NECESARIO CUANDO SE QUIERE MATAR AL HILO, PARA QUE EL PROGRAMA NO FINALICE SIN ACABAR CON EL HILO PRIMERO
-        return 
     
     def inicializar_ficheros_puertos_hilos(self,path,succion,sw,samplesinicio,ct,nfile,nfolder,vsaodrs,arg_extra=None):
         ruta_fichero_data,ruta_fichero = Modulacion.create_files(self,nfile,path,nfolder,samplesinicio)
@@ -289,10 +249,6 @@ class Modulacion(object):
         
         PWM.start(heatpin,100)
         os.remove("file_daemon.txt")
-
-        #Enviamos al hilo de escritura un -2, que es la senial de que finalice, y esperamos para asegurarnos de que acaba
-        Modulacion.queue.put(Modulacion.EXIT)
-        Modulacion.event_write_thread.wait()
 
         #Esperamos a que el hilo de TyH acabe
         self.thread.do_run = False
@@ -328,8 +284,7 @@ class Modulacion(object):
 
     def iniciar_captura_datos(self):
         signal.signal(signal.SIGUSR1, self.handler_signal)
-        Thread(target=self.captura_datos).start() # Creo el hilo de captura de datos y lo inicio
-        self.hilo_escritura_datos()
+        self.captura_datos()
         return
 
 # Puro es un caso especial de regresion, se puede quitar y ahorrar código
