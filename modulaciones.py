@@ -61,10 +61,10 @@ class Modulacion(object):
         Modulacion.tsub = Modulacion.T / Modulacion.NM
         Modulacion.electrpos = config_experiment[tc.SVALPOS]
         Modulacion.capturas_iniciales = [4] if Modulacion.electrpos != 'R' else [1,2,3]
-        Modulacion.queue = qu.Queue() # Creo la cola de mensaje global
+        #Modulacion.queue = qu.Queue() # Creo la cola de mensaje global
         #Modulacion.event_TyH = Event() # Evento para sincronizar los hilos de captura y de escritura
         #Modulacion.event_TyH.set() # Lo ponemos a 1 para evitar un bloqueo
-        Modulacion.event_write_thread = Event() 
+        #Modulacion.event_write_thread = Event() 
         self.activar_GPIO_valvulas() # Puede ser un foco de problemas, puede que haya que cambiarlo
 
     def daemonizar(stdin='stdin.txt',stdout='stdout.txt',stderr='stderr.txt'): 
@@ -136,31 +136,32 @@ class Modulacion(object):
         return ruta1.strip() + str(fileString_data),ruta2.strip() + str(fileString)#,ruta3.strip() + str(fileString_tyh)
 
     def file_TGS2600(self,ruta,nameFile,nameFile_data1,nameFile_tyh,vec_anal_odor,succion,heat2600,tiempo,switch,tespera,samplesinicio):
-        Modulacion.queue.put([0,
-            "Configuracion de la plataforma - El valor maximo de la temperatura es de 5V\n",
-            "Pin del motor: %s\n"%(Modulacion.motorPin),
-            "Numero de capturas ADC para una muestra: %s\n"%(Modulacion.NM),
-            "Tiempo en que se realizan las NM capturas de una muestra: %s\n"%(Modulacion.T),
-            "Tiempo limite de captura de una muestra: %d\n"%Modulacion.SLEEP,
-            "Tiempo limite de captura de una muestra de TyH: %d\n"%(Modulacion.SLEEP_tyh),
-            "Valor de VCC del circuito: %f\n"%(Modulacion.Vcc), 
-            'El puerto de lectura de la humedad y temperatura es el: %s\n'%(Modulacion.Temp22),
-            'Los puertos de las electrovalvulas son: %s\n'%(Modulacion.electrovalvulas),
-            'Posicion de las electrovalvulas: %s\n'%(Modulacion.electrpos),
-            'Sensor TGS2600\n',
-            'Fecha y hora de inicio: ' + str(time.strftime("%a%d%b%Y-%HH%MM%SS", time.localtime())) + '\n',
-            'Ruta del fichero: %s\n'%(ruta),
-            'Nombre del fichero de datos: %s\n'%(nameFile),
-            'Nombre del fichero de texto: %s\n'%(nameFile_data1),
-            'Nombre del fichero de TyH: %s\n'%(nameFile_tyh),
-            'Electrovalvulas (1-METANOL, 2-ETANOL, 3-BUTANOL, 4-AIRE ) \n',
-            'Conmutacion entre electrovalvulas: %s\n'%(vec_anal_odor),
-            'Succion motor (30-100): %d\n'%(succion),
-            'Temperatura TGS2600 (1-100): %d\n'%(heat2600),
-            'Duracion del experimento: %f minutos o muestras\n'%(tiempo),
+        head_g = ["Configuracion de la plataforma - El valor maximo de la temperatura es de 5V",
+            "Pin del motor: %s"%(Modulacion.motorPin),
+            "Numero de capturas ADC para una muestra: %s"%(Modulacion.NM),
+            "Tiempo en que se realizan las NM capturas de una muestra: %s"%(Modulacion.T),
+            "Tiempo limite de captura de una muestra: %d"%Modulacion.SLEEP,
+            "Tiempo limite de captura de una muestra de TyH: %d"%(Modulacion.SLEEP_tyh),
+            "Valor de VCC del circuito: %f"%(Modulacion.Vcc), 
+            'El puerto de lectura de la humedad y temperatura es el: %s'%(Modulacion.Temp22),
+            'Los puertos de las electrovalvulas son: %s'%(Modulacion.electrovalvulas),
+            'Posicion de las electrovalvulas: %s'%(Modulacion.electrpos),
+            'Sensor TGS2600',
+            'Fecha y hora de inicio: ' + str(time.strftime("%a%d%b%Y-%HH%MM%SS", time.localtime())),
+            'Ruta del fichero: %s'%(ruta),
+            'Nombre del fichero de datos: %s'%(nameFile),
+            'Nombre del fichero de texto: %s'%(nameFile_data1),
+            'Nombre del fichero de TyH: %s'%(nameFile_tyh),
+            'Electrovalvulas (1-METANOL, 2-ETANOL, 3-BUTANOL, 4-AIRE )',
+            'Conmutacion entre electrovalvulas: %s'%(vec_anal_odor),
+            'Succion motor (30-100): %d'%(succion),
+            'Temperatura TGS2600 (1-100): %d'%(heat2600),
+            'Duracion del experimento: %f minutos o muestras'%(tiempo),
             'Se ha dejado un tiempo entre captura de gases de: %d segundos'%(tespera),
-            'El experimento tiene: %d muestras iniciales\n'%(samplesinicio),    
-            'El tiempo de switch o conmutacion de las electrovalvulas es de: %d segundos\n'%(switch)])
+            'El experimento tiene: %d muestras iniciales'%(samplesinicio),    
+            'El tiempo de switch o conmutacion de las electrovalvulas es de: %d segundos'%(switch)]
+        self.g.writelines(head_g)
+
         return
         
     def cerrar_electrovalvulas(self):
@@ -174,15 +175,12 @@ class Modulacion(object):
     def reset(self,heatPin):
         
         # Me sincronizo con el hilo de escritura para asegurarme de que ha tenido tiempo para escribir todo
-        Modulacion.queue.put([0,"Experimento finalizado con exito. Fecha de finalizacion: %s\n"%(datetime.now())])
-        Modulacion.queue.put(Modulacion.SYNC) 
-        Modulacion.event_write_thread.wait() 
+        self.g.write("Experimento finalizado con exito. Fecha de finalizacion: %s\n"%(datetime.now()))
         
         self.cerrar_electrovalvulas()
         PWM.stop(Modulacion.motorPin)
         PWM.stop(heatPin)
         PWM.cleanup()
-        fecha_fin = datetime.now()
         self.f.close()
         self.g.close()
         return
@@ -212,13 +210,13 @@ class Modulacion(object):
             
             #Cuanto duerme en funcion de lo que tarde en H y T
             if t_HT > Modulacion.SLEEP_tyh:
-                Modulacion.queue.put([0,"Tiempo medicion H y T > SLEEP: %d\n"%(t_HT)])
+                self.g.write("Tiempo medicion H y T > SLEEP: %d\n"%(t_HT))
             else:
-                Modulacion.queue.put([0,"Tiempo medicion H y T: %d\n"%(t_HT),"Sensor DHT22: %d\n"%(Modulacion.sensorTemp22)])
+                self.g.writelines(["Tiempo medicion H y T: %d\n"%(t_HT),"Sensor DHT22: %d\n"%(Modulacion.sensorTemp22)])
                 if self.humidity is not None and self.temperature is not None:
-                    Modulacion.queue.put([0,'>>> %s Temp = %f, Humidity = %f \n'%(instante,self.temperature,self.humidity)])    
+                    self.g.write(">>> %s Temp = %f, Humidity = %f \n"%(instante,self.temperature,self.humidity))
                 else:
-                    Modulacion.queue.put([0,'Failed to get reading, Try again!'])
+                    self.g.write("Failed to get reading, Try again!")
                     
             time_TH_end = time.time()
             if (time_TH_end-tick_HT) < 1: time.sleep(Modulacion.SLEEP_tyh-(time_TH_end-tick_HT))
@@ -266,8 +264,8 @@ class Modulacion(object):
     def inicializar_ficheros_puertos_hilos(self,path,succion,sw,samplesinicio,ct,nfile,nfolder,vsaodrs,arg_extra=None):
         ruta_fichero_data,ruta_fichero = Modulacion.create_files(self,nfile,path,nfolder,samplesinicio)
         self.f,self.g = os.fdopen(os.open(ruta_fichero_data, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644), 'w'),os.fdopen(os.open(ruta_fichero, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644), 'w')
-        
-        Modulacion.queue.put([0,'Ruta Fichero: %s\n'%(ruta_fichero),'Ruta Fichero de datos: %s\n'%(ruta_fichero_data)])
+       
+        self.g.writelines(["Ruta Fichero: %s"%(ruta_fichero),"Ruta Fichero de datos: %s"%(ruta_fichero_data)])
         
         # Se crea el hilo de lectura y escritura de la temperatura y humedad ambientales
         self.thread = Thread(target=self.measure_tyh,args=())
@@ -281,9 +279,9 @@ class Modulacion(object):
 
     def captura_muestras(self,samplesinicio=None):
         if samplesinicio == None:
-            Modulacion.queue.put([0,'Comienza la experimentacion de datos\n'])
+            self.g.write("Comienza la experimentacion de datos\n")
         else:
-            Modulacion.queue.put([0,'Comienza la adquisicion de %d muestras inciales\n'%(samplesinicio)])
+            self.g.write("Comienza la adquisicion de %d muestras inciales\n"%(samplesinicio))
             
         Modulacion.cerrar_electrovalvulas(self)
 
@@ -324,7 +322,7 @@ class Modulacion(object):
         return None
     
     def handler_signal(self,signum,frame):
-        Modulacion.queue.put([0,"Se ha recibido una senial para el cambio de muestras\n"])
+        self.g.write("Se ha recibido una senial para el cambio de muestras\n")
         self.air_loop = True if self.air_loop == False else False
         signal.signal(signal.SIGUSR1, self.handler_signal)
 
@@ -380,9 +378,8 @@ class Puro(Modulacion):
         time_end = time.time()
               
         # Pasamos a la cola los valores que va a escribir
-        Modulacion.queue.put(["%d %f %f 100 %s "%(self.muestras,valueTGS2600,RsTGS2600,instante_captura),
-            "%s[%d] Valor(mV): %f Rs(ohmios): %f Temperatura(5V): 100 Instante_Captura: %s "%(string,self.muestras,valueTGS2600,RsTGS2600,instante_captura),
-            gas])
+        self.f.write("%d %f %f 100 %s "%(self.muestras,valueTGS2600,RsTGS2600,instante_captura))
+        self.g.write("%s[%d] Valor(mV): %f Rs(ohmios): %f Temperatura(5V): 100 Instante_Captura: %s "%(string,self.muestras,valueTGS2600,RsTGS2600,instante_captura))
         
         return (time_end - time_ini)
 
@@ -408,14 +405,14 @@ class Puro(Modulacion):
         return
 
     def file_TGS2600(self,ruta,nameFile,nameFile_data1,nameFile_tyh,vec_open_valve,succion,heat2600,tiempo,switch,tespera,samplesinicio):
-        Modulacion.queue.put([0,"Algoritmo temperatura constante\n"])
+        self.g.write("Algoritmo temperatura constante\n")
         super().file_TGS2600(ruta,nameFile,nameFile_data1,nameFile_tyh,vec_open_valve,succion,heat2600,tiempo,switch,tespera,samplesinicio)
-        Modulacion.queue.put([0,"Valor de la resistencia de carga: %d\n"%(Puro.Rl_2600)])
+        self.g.write("Valor de la resistencia de carga: %d\n"%(Puro.Rl_2600))
     
     def inicializar_ficheros_puertos_hilos(self,switch,samplesinicio,ct,nfile,nfolder,vsovs,vsaodrs,arg_extra=None):
         super().inicializar_ficheros_puertos_hilos(Puro.path,switch,samplesinicio,ct,nfile,nfolder,vsaodrs)
         PWM.start(Puro.heatPin2600,100)
-        Modulacion.queue.put([0,"%d %d %d %d"%(switch,samplesinicio,ct,len(vsaodrs))])
+        self.f.write("%d %d %d %d"%(switch,samplesinicio,ct,len(vsaodrs)))
         ADC.setup()
         self.file_TGS2600(Puro.path+"/"+self.time_mark.strftime("%Y%m%d")+"/"+nfolder+"/",nfile+".txt",
             nfile+".dat","TyH"+nfile+".data",vsaodrs,suc,5,float(samplesinicio + (ct*(len(vsovs)+1)) + (len(vsovs)*sw)),sw,ct,samplesinicio)
@@ -506,7 +503,6 @@ class Regresion(Modulacion):
             elif temperature_TGS2600 > 90.0:
                 temperature_TGS2600 = 90.0
 
-            Modulacion.queue.put([0,"Los valores de la tendencia, el slope y la temperatura son: %f, %f y %f\n"%(tendencia,slope,temperature_TGS2600)])
             #Reset de setup PWM
             PWM.set_duty_cycle(Regresion.heatPin2600, temperature_TGS2600)
 
@@ -518,13 +514,13 @@ class Regresion(Modulacion):
 
         self.x.append(self.muestras)
         self.concentTGS2600.append(valueTGS2600)
-        
     
-        Modulacion.queue.put(["%d %f %f %f %s %f %f %f %f %f "%
-                (self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,instante_captura,slope, intercept, r_value, p_value, std_err1),
-            "%s[%d] Valor(mV): %f Rs(ohmios) %f Temperatura: %f Instante Captura: %s Slope: %f Intercept: %f R_Value: %f P_Value: %f std_err1: %f "%
-                (string,self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,instante_captura,slope, intercept, r_value, p_value, std_err1),
-            gas])
+        self.f.write("%d %f %f %f %s %f %f %f %f %f "%
+                (self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,instante_captura,slope, intercept, r_value, p_value, std_err1))
+        self.g.write("Los valores de la tendencia, el slope y la temperatura son: %f, %f y %f\n"%(tendencia,slope,temperature_TGS2600))
+        self.g.write("%s[%d] Valor(mV): %f Rs(ohmios) %f Temperatura: %f Instante Captura: %s Slope: %f Intercept: %f R_Value: %f P_Value: %f std_err1: %f "%
+                (string,self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,instante_captura,slope, intercept, r_value, p_value, std_err1))
+        
         return (time_end-time_ini)
 
     def captura_odorante(self,vector_valvulas,vector_odorantes,n_muestras,string,opcion,heat2600,samplesinicio,tendencia):
@@ -549,9 +545,9 @@ class Regresion(Modulacion):
         super().cerrar_electrovalvulas()
 
     def file_TGS2600(self,ruta,nameFile,nameFile_data1,nameFile_tyh,vec_open_valve,succion,heat2600,tiempo,switch,tespera,samplesinicio,tendencia):
-        Modulacion.queue.put([0,"Algoritmo temperatura variable y codificacion en amplitud\n"])
+        self.g.write("Algoritmo temperatura variable y codificacion en amplitud\n")
         super().file_TGS2600(ruta,nameFile,nameFile_data1,nameFile_tyh,vec_open_valve,succion,heat2600,tiempo,switch,tespera,samplesinicio)
-        Modulacion.queue.put([0,"Pin PWM de calentamiento sensor: %s\n"%(self.heatPin2600),
+        self.g.writelines(["Pin PWM de calentamiento sensor: %s\n"%(self.heatPin2600),
             "Valor de la tendencia: %f\n"%(tendencia),
             "Pin ADC sensor: %s\n"%(self.sensorPin2600),
             "Valor de la resistencia de carga: %d\n"%(Regresion.Rl_2600)])
@@ -560,7 +556,7 @@ class Regresion(Modulacion):
         super().inicializar_ficheros_puertos_hilos(Regresion.path,suc,sw,samplesinicio,ct,nfile,nfolder,vsaodrs)
         ADC.setup()
         PWM.start(Regresion.heatPin2600,arg_extra[0]) 
-        Modulacion.queue.put([2,"%d %d %d %d"%(sw,samplesinicio,ct,len(vsaodrs))])
+        self.f.write("%d %d %d %d\n"%(sw,samplesinicio,ct,len(vsaodrs)))
         self.file_TGS2600(Regresion.path+"/"+self.time_mark.strftime("%Y%m%d")+"/"+nfolder+"/",
             nfile+".txt",nfile+".dat","TyH"+nfile+".data",vsaodrs,suc,(arg_extra[0]*0.01*5),
             float(samplesinicio + (ct*(len(vsovs)+1)) + (len(vsovs)*sw)),sw,ct,samplesinicio,arg_extra[1])
@@ -763,11 +759,10 @@ class MPID(Modulacion): #ModulationPID
         time_end = time.time()
         print(time_end-time_ini)
 
-        Modulacion.queue.put(["%d %f %f %f %f %f %s "%
-                (self.muestras,subtarget,valueTGS2600,RSTGS,self.temp,temperaturaPID,instante_captura),
-            "%s[%d] Target(mV): %f Valor sensor(mV): %f Rs(ohmios) %f Temperatura: %f Temperatura_PID: %f Instante Captura: %s"%
-                (string,self.muestras,subtarget,valueTGS2600,RSTGS,self.temp,temperaturaPID,instante_captura),
-            gas])
+        self.f.write("%d %f %f %f %f %f %s "%
+                (self.muestras,subtarget,valueTGS2600,RSTGS,self.temp,temperaturaPID,instante_captura))
+        self.g.write("%s[%d] Target(mV): %f Valor sensor(mV): %f Rs(ohmios) %f Temperatura: %f Temperatura_PID: %f Instante Captura: %s"%
+                (string,self.muestras,subtarget,valueTGS2600,RSTGS,self.temp,temperaturaPID,instante_captura))
 
         self.lastError, self.addError, self.temp = error,ei,temperaturaPID
         return [time_end - time_ini,valueTGS2600]
@@ -789,7 +784,7 @@ class MPID(Modulacion): #ModulationPID
         for count in range(n_muestras):
 
             if self.muestras % periodo == 0 and self.muestras != 0:
-                Modulacion.queue.put([0,"Se procede a recalcular el target\n"])
+                self.g.write("Se procede a recalcular el target\n")
                 self.recalcular_target(temperature_Max_Upper_Bound,temperature_Min_Upper_Bound,temperature_Max_Lower_Bound,temperature_Min_Lower_Bound,periodo)
 
             subtarget = self.target[self.muestras%periodo]
@@ -809,21 +804,21 @@ class MPID(Modulacion): #ModulationPID
         heat2600,tiempo,switch,tespera,samplesinicio,period,Kp,Ki,Kd,temperature_Max_Upper_Bound,temperature_Min_Upper_Bound,
         temperature_Max_Lower_Bound,temperature_Min_Lower_Bound,maximum_peak_value,minimum_peak_value):
         
-        Modulacion.queue.put([0,"Algoritmo modulacion por PID en lazo cerrado\n"])
+        self.g.write("Algoritmo modulacion por PID en lazo cerrado\n")
         super().file_TGS2600(ruta,nameFile,nameFile_data1,nameFile_tyh,vec_open_valve,succion,heat2600,tiempo,switch,tespera,samplesinicio)
-        Modulacion.queue.put([0,"Pin PWM de calentamiento sensor: %s\n"%(self.heatPin2600),
-            "Pin ADC sensor: %s\n"%(self.sensorPin2600),
-            "Valor de la resistencia de carga: %d\n"%(MPID.Rl_2600),
-            "Control Proporcional: %f\n"%(Kp),
-            "Control Integral: %f\n"%(Ki),
-            "Control Derivativo: %f\n"%(Kd),
-            "Periodo de la senial: %d\n"%(period),
-            "Limite maximo superior: %d\n"%(temperature_Max_Upper_Bound),
-            "Limite minimo superior: %d\n"%(temperature_Min_Upper_Bound),
-            "Limite maximo inferior: %d\n"%(temperature_Max_Lower_Bound),
-            "Limite minimo inferior: %d\n"%(temperature_Min_Lower_Bound),
-            "Valor pico inicial maximo: %f\n"%(maximum_peak_value),
-            "Valor pico inicial minimo: %f\n"%(minimum_peak_value)])
+        self.g.writelines("Pin PWM de calentamiento sensor: %s"%(self.heatPin2600),
+            "Pin ADC sensor: %s"%(self.sensorPin2600),
+            "Valor de la resistencia de carga: %d"%(MPID.Rl_2600),
+            "Control Proporcional: %f"%(Kp),
+            "Control Integral: %f"%(Ki),
+            "Control Derivativo: %f"%(Kd),
+            "Periodo de la senial: %d"%(period),
+            "Limite maximo superior: %d"%(temperature_Max_Upper_Bound),
+            "Limite minimo superior: %d"%(temperature_Min_Upper_Bound),
+            "Limite maximo inferior: %d"%(temperature_Max_Lower_Bound),
+            "Limite minimo inferior: %d"%(temperature_Min_Lower_Bound),
+            "Valor pico inicial maximo: %f"%(maximum_peak_value),
+            "Valor pico inicial minimo: %f"%(minimum_peak_value))
     
     def inicializar_ficheros_puertos_hilos(self,suc,sw,samplesinicio,ct,nfile,nfolder,vsovs,vsaodrs,arg_extra=None):
         super().inicializar_ficheros_puertos_hilos(MPID.path,suc,sw,samplesinicio,ct,nfile,nfolder,vsaodrs)
