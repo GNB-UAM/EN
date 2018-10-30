@@ -378,6 +378,7 @@ class Puro(Modulacion):
         time_end = time.time()
               
         # Pasamos a la cola los valores que va a escribir
+        gases = 
         self.f.write("%d %f %f 100 %s "%(self.muestras,valueTGS2600,RsTGS2600,instante_captura))
         self.g.write("%s[%d] Valor(mV): %f Rs(ohmios): %f Temperatura(5V): 100 Instante_Captura: %s "%(string,self.muestras,valueTGS2600,RsTGS2600,instante_captura))
         
