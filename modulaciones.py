@@ -230,7 +230,7 @@ class Modulacion(object):
         # Se crea el hilo de lectura y escritura de la temperatura y humedad ambientales
         self.thread = Thread(target=self.measure_tyh,args=())
         self.thread.do_run = True
-        self.thread.start()
+        #self.thread.start()
         
         # Se arranca el motor
         PWM.start(Modulacion.motorPin,succion)
@@ -333,10 +333,10 @@ class Puro(Modulacion):
         time_end = time.time()
               
         # Pasamos a la cola los valores que va a escribir
-        gases = " ".join(str(e) for lst in gas for e in lst)
-        gases_id = " ".join(Modulacion.odorantes[e] for lst in gas for e in lst)
-        self.f.write("%d %f %f 100 %s %s\n"%(self.muestras,valueTGS2600,RsTGS2600,instante_captura,gases))
-        self.g.write("%s[%d] Valor(mV): %f Rs(ohmios): %f Temperatura(5V): 100 Instante_Captura: %s Identificador_gases: %s %s\n"%(string,self.muestras,valueTGS2600,RsTGS2600,instante_captura,gases_id,gases))
+        gases = " ".join(str(e) for e in gas)
+        gases_id = " ".join(Modulacion.odorantes[e] for e in gas)
+        self.f.write("%d %f %f 100 %f %f %s %s\n"%(self.muestras,valueTGS2600,RsTGS2600,self.temperature,self.humidity,instante_captura,gases))
+        self.g.write("%s[%d] Valor(mV): %f Rs(ohmios): %f Temperatura(5V): 100 Temperatura_ambiental: %f Humedad_ambiental: %f Instante_Captura: %s Identificador_gases: %s %s\n"%(string,self.muestras,valueTGS2600,RsTGS2600,self.temperature,self.humidity,instante_captura,gases_id,gases))
         
         return (time_end - time_ini)
 
@@ -467,17 +467,17 @@ class Regresion(Modulacion):
         #Se calcula el valor de la resistencia interna del sensor
         RsTGS2600=((Modulacion.Vcc*Regresion.Rl_2600)/(valueTGS2600/1000.))-Regresion.Rl_2600
         time_end = time.time()
-        print(time_end-time_ini)
+        print(time_end-time_ini,gas)
 
         self.x.append(self.muestras)
         self.concentTGS2600.append(valueTGS2600)
         
-        gases = " ".join(str(e) for lst in gas for e in lst)
-        gases_id = " ".join(Modulacion.odorantes[e] for lst in gas for e in lst)
-        self.f.write("%d %f %f %f %s %f %f %f %f %f %s\n"%
-                (self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,instante_captura,slope, intercept, r_value, p_value, std_err1, gases))
+        gases = " ".join(str(e) for e in gas)
+        gases_id = " ".join(Modulacion.odorantes[e] for e in gas)
+        self.f.write("%d %f %f %f %f %f %s %f %f %f %f %f %s\n"%
+                (self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,self.temperature,self.humidity,instante_captura,slope, intercept, r_value, p_value, std_err1, gases))
         self.g.write("Los valores de la tendencia, el slope y la temperatura son: %f, %f y %f\n"%(tendencia,slope,temperature_TGS2600))
-        self.g.write("%s[%d] Valor(mV): %f Rs(ohmios) %f Temperatura: %f Instante Captura: %s Slope: %f Intercept: %f R_Value: %f P_Value: %f std_err1: %f Identificador_gases: %s %s\n"%
+        self.g.write("%s[%d] Valor(mV): %f Rs(ohmios) %f Temperatura: %f Temperatura_ambiental: %f Humedad_ambiental: %f Instante Captura: %s Slope: %f Intercept: %f R_Value: %f P_Value: %f std_err1: %f Identificador_gases: %s %s\n"%
                 (string,self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,instante_captura,slope, intercept, r_value, p_value, std_err1, gases_id, gases))
         
         return (time_end-time_ini)
@@ -524,17 +524,17 @@ class Regresion(Modulacion):
         
         #Captura muestras iniciales
         super().captura_muestras(samplesinicio)
-        self.captura_odorante(Modulacion.capturas_iniciales,[4],samplesinicio,"Muestras_iniciales",1,args_extra[0],samplesinicio,args_extra[1])
+        self.captura_odorante(Modulacion.capturas_iniciales,[[4]],samplesinicio,"Muestras_iniciales",1,args_extra[0],samplesinicio,args_extra[1])
 
         #Captura muestras para experimentacion
         super().captura_muestras()
 
         switch = sw if isinstance(sw,list) else [sw]*len(vsovs)
         for sw,vsov,vsaodr in zip(switch,vsovs,vsaodrs):
-            self.captura_odorante(Modulacion.capturas_iniciales,[4],ct,"Muestra_entre_gases",2,args_extra[0],samplesinicio,args_extra[1])
+            self.captura_odorante(Modulacion.capturas_iniciales,[[4]],ct,"Muestra_entre_gases",2,args_extra[0],samplesinicio,args_extra[1])
             self.captura_odorante(vsov,vsaodr,sw,"Muestra_gases",2,args_extra[0],samplesinicio,args_extra[1])
 
-        self.captura_odorante(Modulacion.capturas_iniciales,[4],ct,"Muestra_entre_gases",2,args_extra[0],samplesinicio,args_extra[1])
+        self.captura_odorante(Modulacion.capturas_iniciales,[[4]],ct,"Muestra_entre_gases",2,args_extra[0],samplesinicio,args_extra[1])
 
     def reset(self,sle,arg_extra=None):
         super().reset(Regresion.heatPin2600)
@@ -718,12 +718,12 @@ class MPID(Modulacion): #ModulationPID
         time_end = time.time()
         print(time_end-time_ini)
 
-        gases = " ".join(str(e) for lst in gas for e in lst)
-        gases_id = " ".join(Modulacion.odorantes[e] for lst in gas for e in lst)
-        self.f.write("%d %f %f %f %f %f %s %s\n"%
-                (self.muestras,subtarget,valueTGS2600,RSTGS,self.temp,temperaturaPID,instante_captura,gases))
-        self.g.write("%s[%d] Target(mV): %f Valor sensor(mV): %f Rs(ohmios) %f Temperatura: %f Temperatura_PID: %f Instante Captura: %s Identificador_gases: %s %s\n"%
-                (string,self.muestras,subtarget,valueTGS2600,RSTGS,self.temp,temperaturaPID,instante_captura,gases_id,gases))
+        gases = " ".join(str(e) for e in gas)
+        gases_id = " ".join(Modulacion.odorantes[e] for e in gas)
+        self.f.write("%d %f %f %f %f %f %f %f %s %s\n"%
+                (self.muestras,subtarget,valueTGS2600,RSTGS,self.temp,temperaturaPID,self.temperature,self.humidity,instante_captura,gases))
+        self.g.write("%s[%d] Target(mV): %f Valor sensor(mV): %f Rs(ohmios) %f Temperatura: %f Temperatura_PID: %f Temperatura_ambiental: %f Humedad_ambiental: %f Instante Captura: %s Identificador_gases: %s %s\n"%
+                (string,self.muestras,subtarget,valueTGS2600,RSTGS,self.temp,temperaturaPID,self.temperature,self.humidity,instante_captura,gases_id,gases))
 
         self.lastError, self.addError, self.temp = error,ei,temperaturaPID
         return [time_end - time_ini,valueTGS2600]
