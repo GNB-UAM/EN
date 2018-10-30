@@ -143,23 +143,23 @@ class Modulacion(object):
             "Tiempo limite de captura de una muestra: %d"%Modulacion.SLEEP,
             "Tiempo limite de captura de una muestra de TyH: %d"%(Modulacion.SLEEP_tyh),
             "Valor de VCC del circuito: %f"%(Modulacion.Vcc), 
-            'El puerto de lectura de la humedad y temperatura es el: %s'%(Modulacion.Temp22),
-            'Los puertos de las electrovalvulas son: %s'%(Modulacion.electrovalvulas),
-            'Posicion de las electrovalvulas: %s'%(Modulacion.electrpos),
-            'Sensor TGS2600',
-            'Fecha y hora de inicio: ' + str(time.strftime("%a%d%b%Y-%HH%MM%SS", time.localtime())),
-            'Ruta del fichero: %s'%(ruta),
-            'Nombre del fichero de datos: %s'%(nameFile),
-            'Nombre del fichero de texto: %s'%(nameFile_data1),
-            'Nombre del fichero de TyH: %s'%(nameFile_tyh),
-            'Electrovalvulas (1-METANOL, 2-ETANOL, 3-BUTANOL, 4-AIRE )',
-            'Conmutacion entre electrovalvulas: %s'%(vec_anal_odor),
-            'Succion motor (30-100): %d'%(succion),
-            'Temperatura TGS2600 (1-100): %d'%(heat2600),
-            'Duracion del experimento: %f minutos o muestras'%(tiempo),
-            'Se ha dejado un tiempo entre captura de gases de: %d segundos'%(tespera),
-            'El experimento tiene: %d muestras iniciales'%(samplesinicio),    
-            'El tiempo de switch o conmutacion de las electrovalvulas es de: %d segundos'%(switch)]
+            "El puerto de lectura de la humedad y temperatura es el: %s"%(Modulacion.Temp22),
+            "Los puertos de las electrovalvulas son: %s"%(Modulacion.electrovalvulas),
+            "Posicion de las electrovalvulas: %s"%(Modulacion.electrpos),
+            "Sensor TGS2600",
+            "Fecha y hora de inicio: " + str(time.strftime("%a%d%b%Y-%HH%MM%SS", time.localtime())),
+            "Ruta del fichero: %s"%(ruta),
+            "Nombre del fichero de datos: %s"%(nameFile),
+            "Nombre del fichero de texto: %s"%(nameFile_data1),
+            "Nombre del fichero de TyH: %s"%(nameFile_tyh),
+            "Electrovalvulas (1-METANOL, 2-ETANOL, 3-BUTANOL, 4-AIRE )",
+            "Conmutacion entre electrovalvulas: %s"%(vec_anal_odor),
+            "Succion motor (30-100): %d"%(succion),
+            "Temperatura TGS2600 (1-100): %d"%(heat2600),
+            "Duracion del experimento: %f minutos o muestras"%(tiempo),
+            "Se ha dejado un tiempo entre captura de gases de: %d segundos"%(tespera),
+            "El experimento tiene: %d muestras iniciales"%(samplesinicio),    
+            "El tiempo de switch o conmutacion de las electrovalvulas es de: %d segundos"%(switch)]
         self.g.writelines(head_g)
 
         return
@@ -823,7 +823,7 @@ class MPID(Modulacion): #ModulationPID
     def inicializar_ficheros_puertos_hilos(self,suc,sw,samplesinicio,ct,nfile,nfolder,vsovs,vsaodrs,arg_extra=None):
         super().inicializar_ficheros_puertos_hilos(MPID.path,suc,sw,samplesinicio,ct,nfile,nfolder,vsaodrs)
         PWM.start(MPID.heatPin2600,arg_extra[0])
-        Modulacion.queue.put([0,"%d %d %d %d"%(sw,samplesinicio,ct,len(vsaodrs))])
+        self.f.write("%d %d %d %d"%(sw,samplesinicio,ct,len(vsaodrs)))
         ADC.setup()
         self.file_TGS2600(MPID.path+"/"+self.time_mark.strftime("%Y%m%d")+"/"+nfolder+"/",
             nfile+".txt",nfile+".dat","TyH"+nfile+".data",
@@ -851,11 +851,10 @@ class MPID(Modulacion): #ModulationPID
             time_end = time.time()
 
             if time_end - time_ini < 1: time.sleep(Modulacion.SLEEP - (time_end - time_ini)) 
-            Modulacion.queue.put(["%d %f %f %f %s "%
+            self.f.write("%d %f %f %f %s "%
                 (self.muestras,valueTGS2600,RSTGS,heat,instante_captura),
-            "Muestras_iniciales[%d] Valor(mV): %f Rs(ohmios) %f Temperatura: %f Instante Captura: %s "%
-                (self.muestras,valueTGS2600,RSTGS,heat,instante_captura),
-            [4]])
+            self.g.write("Muestras_iniciales[%d] Valor(mV): %f Rs(ohmios) %f Temperatura: %f Instante Captura: %s "%
+                (self.muestras,valueTGS2600,RSTGS,heat,instante_captura)),
             
         super().cerrar_electrovalvulas()
         return False
