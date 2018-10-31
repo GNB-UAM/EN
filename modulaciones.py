@@ -61,8 +61,8 @@ class Modulacion(object):
         Modulacion.electrpos = config_experiment[tc.SVALPOS]
         Modulacion.capturas_iniciales = [4] if Modulacion.electrpos != 'R' else [1,2,3]
         #Modulacion.queue = qu.Queue() # Creo la cola de mensaje global
-        #Modulacion.event_TyH = Event() # Evento para sincronizar los hilos de captura y de escritura
-        #Modulacion.event_TyH.set() # Lo ponemos a 1 para evitar un bloqueo
+        Modulacion.event_TyH = Event() # Evento para sincronizar los hilos de captura y de escritura
+        Modulacion.event_TyH.set() # Lo ponemos a 1 para evitar un bloqueo
         #Modulacion.event_write_thread = Event() 
         self.activar_GPIO_valvulas() # Puede ser un foco de problemas, puede que haya que cambiarlo
 
@@ -199,12 +199,12 @@ class Modulacion(object):
         #Lectura humedad y temperatura
         while getattr(self.thread,"do_run",True):
             # Fijo bloqueo para actualizar valores de TyH
-            #self.event_TyH.wait()
+            self.event_TyH.wait()
             tick_HT = time.time()
             self.humidity, self.temperature = DHT.read_retry(Modulacion.sensorTemp22,Modulacion.Temp22,30,1,None)
             t_HT = time.time()-tick_HT
             instante = datetime.now()
-            #self.event_TyH.set() # Finalizo bloqueo una vez que he actualizado los valores
+            self.event_TyH.set() # Finalizo bloqueo una vez que he actualizado los valores
             
             #Cuanto duerme en funcion de lo que tarde en H y T
             if t_HT > Modulacion.SLEEP_tyh:
@@ -330,14 +330,17 @@ class Puro(Modulacion):
                 
         #Se calcula el valor de la resistencia interna del sensor
         RsTGS2600=((Modulacion.Vcc*Puro.Rl_2600)/(valueTGS2600/1000.))-Puro.Rl_2600
-        time_end = time.time()
+        
               
         # Pasamos a la cola los valores que va a escribir
         gases = " ".join(str(e) for e in gas)
         gases_id = " ".join(Modulacion.odorantes[e] for e in gas)
+        self.event_TyH.wait()
         self.f.write("%d %f %f 100 %f %f %s %s\n"%(self.muestras,valueTGS2600,RsTGS2600,self.temperature,self.humidity,instante_captura,gases))
         self.g.write("%s[%d] Valor(mV): %f Rs(ohmios): %f Temperatura(5V): 100 Temperatura_ambiental: %f Humedad_ambiental: %f Instante_Captura: %s Identificador_gases: %s %s\n"%(string,self.muestras,valueTGS2600,RsTGS2600,self.temperature,self.humidity,instante_captura,gases_id,gases))
-        
+        self.event_TyH.set()
+        time_end = time.time()
+
         return (time_end - time_ini)
 
     def captura_odorante(self,vector_valvulas,vector_odorantes,n_muestras,string):
@@ -466,20 +469,23 @@ class Regresion(Modulacion):
         
         #Se calcula el valor de la resistencia interna del sensor
         RsTGS2600=((Modulacion.Vcc*Regresion.Rl_2600)/(valueTGS2600/1000.))-Regresion.Rl_2600
-        time_end = time.time()
-        print(time_end-time_ini,gas)
+        
 
         self.x.append(self.muestras)
         self.concentTGS2600.append(valueTGS2600)
         
         gases = " ".join(str(e) for e in gas)
         gases_id = " ".join(Modulacion.odorantes[e] for e in gas)
+        self.g.write("Los valores de la tendencia, el slope y la temperatura son: %f, %f y %f\n"%(tendencia,slope,temperature_TGS2600))
+        
+        self.event_TyH.wait()
         self.f.write("%d %f %f %f %f %f %s %f %f %f %f %f %s\n"%
                 (self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,self.temperature,self.humidity,instante_captura,slope, intercept, r_value, p_value, std_err1, gases))
-        self.g.write("Los valores de la tendencia, el slope y la temperatura son: %f, %f y %f\n"%(tendencia,slope,temperature_TGS2600))
         self.g.write("%s[%d] Valor(mV): %f Rs(ohmios) %f Temperatura: %f Temperatura_ambiental: %f Humedad_ambiental: %f Instante Captura: %s Slope: %f Intercept: %f R_Value: %f P_Value: %f std_err1: %f Identificador_gases: %s %s\n"%
                 (string,self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,instante_captura,slope, intercept, r_value, p_value, std_err1, gases_id, gases))
-        
+        self.event_TyH.set()
+        time_end = time.time()
+        print(time_end-time_ini,gas)
         return (time_end-time_ini)
 
     def captura_odorante(self,vector_valvulas,vector_odorantes,n_muestras,string,opcion,heat2600,samplesinicio,tendencia):
@@ -715,17 +721,22 @@ class MPID(Modulacion): #ModulationPID
 
         PWM.set_duty_cycle(MPID.heatPin2600, temperaturaPID)
         RSTGS = ((Modulacion.Vcc*MPID.Rl_2600)/(valueTGS2600/1000.0)) - MPID.Rl_2600
-        time_end = time.time()
-        print(time_end-time_ini)
+        
 
         gases = " ".join(str(e) for e in gas)
         gases_id = " ".join(Modulacion.odorantes[e] for e in gas)
+        
+        self.event_TyH.wait()
         self.f.write("%d %f %f %f %f %f %f %f %s %s\n"%
                 (self.muestras,subtarget,valueTGS2600,RSTGS,self.temp,temperaturaPID,self.temperature,self.humidity,instante_captura,gases))
         self.g.write("%s[%d] Target(mV): %f Valor sensor(mV): %f Rs(ohmios) %f Temperatura: %f Temperatura_PID: %f Temperatura_ambiental: %f Humedad_ambiental: %f Instante Captura: %s Identificador_gases: %s %s\n"%
                 (string,self.muestras,subtarget,valueTGS2600,RSTGS,self.temp,temperaturaPID,self.temperature,self.humidity,instante_captura,gases_id,gases))
+        self.event_TyH.set()
 
         self.lastError, self.addError, self.temp = error,ei,temperaturaPID
+
+        time_end = time.time()
+        print(time_end-time_ini)
         return [time_end - time_ini,valueTGS2600]
 
     def captura_odorante(self,vector_valvulas,vector_odorantes,n_muestras,string,periodo, Kp, Kd, Ki, 
