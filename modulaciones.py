@@ -337,7 +337,8 @@ class Puro(Modulacion):
         gases_id = " ".join(Modulacion.odorantes[e] for e in gas)
         self.event_TyH.wait()
         self.f.write("%d %f %f 100 %f %f %s %s\n"%(self.muestras,valueTGS2600,RsTGS2600,self.temperature,self.humidity,instante_captura,gases))
-        self.g.write("%s[%d] Valor(mV): %f Rs(ohmios): %f Temperatura(5V): 100 Temperatura_ambiental: %f Humedad_ambiental: %f Instante_Captura: %s Identificador_gases: %s %s\n"%(string,self.muestras,valueTGS2600,RsTGS2600,self.temperature,self.humidity,instante_captura,gases_id,gases))
+        self.g.write("%s[%d] Valor(mV): %f Rs(ohmios): %f Temperatura(5V): 100 Temperatura_ambiental: %f Humedad_ambiental: %f Instante_Captura: %s Identificador_gases: %s %s\n"%
+            (string,self.muestras,valueTGS2600,RsTGS2600,self.temperature,self.humidity,instante_captura,gases_id,gases))
         self.event_TyH.set()
         time_end = time.time()
 
@@ -483,7 +484,7 @@ class Regresion(Modulacion):
         self.f.write("%d %f %f %f %f %f %s %f %f %f %f %f %s\n"%
                 (self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,self.temperature,self.humidity,instante_captura,slope, intercept, r_value, p_value, std_err1, gases))
         self.g.write("%s[%d] Valor(mV): %f Rs(ohmios) %f Temperatura: %f Temperatura_ambiental: %f Humedad_ambiental: %f Instante Captura: %s Slope: %f Intercept: %f R_Value: %f P_Value: %f std_err1: %f Identificador_gases: %s %s\n"%
-                (string,self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,instante_captura,slope, intercept, r_value, p_value, std_err1, gases_id, gases))
+                (string,self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,self.temperature,self.humidity,instante_captura,slope, intercept, r_value, p_value, std_err1, gases_id, gases))
         self.event_TyH.set()
         time_end = time.time()
         print(time_end-time_ini,gas)
@@ -531,17 +532,17 @@ class Regresion(Modulacion):
         
         #Captura muestras iniciales
         super().captura_muestras(samplesinicio)
-        self.captura_odorante(Modulacion.capturas_iniciales,[[4]],samplesinicio,"Muestras_iniciales",1,args_extra[0],samplesinicio,args_extra[1])
+        self.captura_odorante(Modulacion.capturas_iniciales,[4],samplesinicio,"Muestras_iniciales",1,args_extra[0],samplesinicio,args_extra[1])
 
         #Captura muestras para experimentacion
         super().captura_muestras()
 
         switch = sw if isinstance(sw,list) else [sw]*len(vsovs)
         for sw,vsov,vsaodr in zip(switch,vsovs,vsaodrs):
-            self.captura_odorante(Modulacion.capturas_iniciales,[[4]],ct,"Muestra_entre_gases",2,args_extra[0],samplesinicio,args_extra[1])
+            self.captura_odorante(Modulacion.capturas_iniciales,[4],ct,"Muestra_entre_gases",2,args_extra[0],samplesinicio,args_extra[1])
             self.captura_odorante(vsov,vsaodr,sw,"Muestra_gases",2,args_extra[0],samplesinicio,args_extra[1])
 
-        self.captura_odorante(Modulacion.capturas_iniciales,[[4]],ct,"Muestra_entre_gases",2,args_extra[0],samplesinicio,args_extra[1])
+        self.captura_odorante(Modulacion.capturas_iniciales,[4],ct,"Muestra_entre_gases",2,args_extra[0],samplesinicio,args_extra[1])
 
     def reset(self,sle,arg_extra=None):
         super().reset(Regresion.heatPin2600)
