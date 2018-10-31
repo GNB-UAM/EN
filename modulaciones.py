@@ -474,6 +474,7 @@ class Regresion(Modulacion):
         self.x.append(self.muestras)
         self.concentTGS2600.append(valueTGS2600)
         
+        print(gas)
         gases = " ".join(str(e) for e in gas)
         gases_id = " ".join(Modulacion.odorantes[e] for e in gas)
         self.g.write("Los valores de la tendencia, el slope y la temperatura son: %f, %f y %f\n"%(tendencia,slope,temperature_TGS2600))
