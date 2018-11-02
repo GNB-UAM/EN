@@ -46,7 +46,6 @@ class Modulacion(object):
         self.sleeps = config_experiment[tc.SSLEEP]
         self.time_mark = datetime.now()
         self.f,self.g,self.h,self.thiread = None,None,None,None
-        self.humidity, self.temperature = None,None
         self.air_loop = False
         Modulacion.motorPin = config_experiment[tc.SMTPORT] if config_experiment[tc.SMTPORT] != '' else 'P9_21'
         Modulacion.NM = int(config_experiment[tc.SNMUETS]) if config_experiment[tc.SNMUETS] != '' else 10
@@ -62,9 +61,13 @@ class Modulacion(object):
         Modulacion.capturas_iniciales = [4] if Modulacion.electrpos != 'R' else [1,2,3]
         #Modulacion.queue = qu.Queue() # Creo la cola de mensaje global
         Modulacion.event_TyH = Event() # Evento para sincronizar los hilos de captura y de escritura
-        Modulacion.event_TyH.set() # Lo ponemos a 1 para evitar un bloqueo
+        Modulacion.event_TyH.set() # Lo ponemos a true la bancera para evitar un bloqueo, inicialmente es false
         #Modulacion.event_write_thread = Event() 
         self.activar_GPIO_valvulas() # Puede ser un foco de problemas, puede que haya que cambiarlo
+        self.humidity, self.temperature = DHT.read_retry(Modulacion.sensorTemp22,Modulacion.Temp22,30,1,None)
+        ############# QUITARLO ##############
+        self.humidity, self.temperature = 0,0
+        #####################################
 
     def daemonizar(stdin='stdin.txt',stdout='stdout.txt',stderr='stderr.txt'): 
         try:
@@ -204,6 +207,9 @@ class Modulacion(object):
             self.humidity, self.temperature = DHT.read_retry(Modulacion.sensorTemp22,Modulacion.Temp22,30,1,None)
             t_HT = time.time()-tick_HT
             instante = datetime.now()
+            ############# QUITARLO ##############
+            self.humidity, self.temperature = 0,0
+            #####################################
             self.event_TyH.set() # Finalizo bloqueo una vez que he actualizado los valores
             
             #Cuanto duerme en funcion de lo que tarde en H y T
@@ -475,7 +481,6 @@ class Regresion(Modulacion):
         self.x.append(self.muestras)
         self.concentTGS2600.append(valueTGS2600)
         
-        print(gas)
         gases = " ".join(str(e) for e in gas)
         gases_id = " ".join(Modulacion.odorantes[e] for e in gas)
         self.g.write("Los valores de la tendencia, el slope y la temperatura son: %f, %f y %f\n"%(tendencia,slope,temperature_TGS2600))
