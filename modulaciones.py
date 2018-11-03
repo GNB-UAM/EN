@@ -480,6 +480,8 @@ class Regresion(Modulacion):
 
         self.x.append(self.muestras)
         self.concentTGS2600.append(valueTGS2600)
+        time_end = time.time()
+        print(time_end-time_ini,gas)
         
         gases = " ".join(str(e) for e in gas)
         gases_id = " ".join(Modulacion.odorantes[e] for e in gas)
@@ -491,8 +493,7 @@ class Regresion(Modulacion):
         self.g.write("%s[%d] Valor(mV): %f Rs(ohmios) %f Temperatura: %f Temperatura_ambiental: %f Humedad_ambiental: %f Instante Captura: %s Slope: %f Intercept: %f R_Value: %f P_Value: %f std_err1: %f Identificador_gases: %s %s\n"%
                 (string,self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,self.temperature,self.humidity,instante_captura,slope, intercept, r_value, p_value, std_err1, gases_id, gases))
         self.event_TyH.set()
-        time_end = time.time()
-        print(time_end-time_ini,gas)
+        
         return (time_end-time_ini)
 
     def captura_odorante(self,vector_valvulas,vector_odorantes,n_muestras,string,opcion,heat2600,samplesinicio,tendencia):
