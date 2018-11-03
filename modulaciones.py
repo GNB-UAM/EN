@@ -204,7 +204,7 @@ class Modulacion(object):
             # Fijo bloqueo para actualizar valores de TyH
             self.event_TyH.wait()
             tick_HT = time.time()
-            self.humidity, self.temperature = DHT.read_retry(Modulacion.sensorTemp22,Modulacion.Temp22,30,1,None)
+            self.humidity, self.temperature = DHT.read_retry(Modulacion.sensorTemp22,Modulacion.Temp22,30,1,None) #15,1,None ¿?
             t_HT = time.time()-tick_HT
             instante = datetime.now()
             ############# QUITARLO ##############
