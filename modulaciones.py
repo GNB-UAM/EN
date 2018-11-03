@@ -66,7 +66,7 @@ class Modulacion(object):
         self.activar_GPIO_valvulas() # Puede ser un foco de problemas, puede que haya que cambiarlo
         self.humidity, self.temperature = DHT.read_retry(Modulacion.sensorTemp22,Modulacion.Temp22,30,1,None)
         ############# QUITARLO ##############
-        self.humidity, self.temperature = 0,0
+        #self.humidity, self.temperature = 0,0
         #####################################
 
     def daemonizar(stdin='stdin.txt',stdout='stdout.txt',stderr='stderr.txt'): 
@@ -208,7 +208,7 @@ class Modulacion(object):
             t_HT = time.time()-tick_HT
             instante = datetime.now()
             ############# QUITARLO ##############
-            self.humidity, self.temperature = 0,0
+            #self.humidity, self.temperature = 0,0
             #####################################
             self.event_TyH.set() # Finalizo bloqueo una vez que he actualizado los valores
             
