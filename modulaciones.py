@@ -242,7 +242,7 @@ class Modulacion(object):
         # Se crea el hilo de lectura y escritura de la temperatura y humedad ambientales
         self.thread = Thread(target=self.measure_tyh,args=())
         self.thread.do_run = True
-        self.thread.start()
+        #self.thread.start()
         
         # Se arranca el motor
         PWM.start(Modulacion.motorPin,succion)
