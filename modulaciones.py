@@ -175,7 +175,7 @@ class Modulacion(object):
     def reset(self,heatPin):
         
         # Me sincronizo con el hilo de escritura para asegurarme de que ha tenido tiempo para escribir todo
-        self.g.write("Experimento finalizado con exito. Fecha de finalizacion: %s\n"%(datetime.now()))
+        self.g.writelines("Experimento finalizado con exito. Fecha de finalizacion: %s\n"%(datetime.now()))
         self.g.flush()
         self.cerrar_electrovalvulas()
         PWM.stop(Modulacion.motorPin)
@@ -183,7 +183,7 @@ class Modulacion(object):
         PWM.cleanup()
         self.f.flush()
         self.f.close()
-        self.g.close()
+        self.g.flush()
         self.g.close()
         return
 
@@ -215,16 +215,16 @@ class Modulacion(object):
             
             #Cuanto duerme en funcion de lo que tarde en H y T
             #if t_HT > Modulacion.SLEEP_tyh and self.g != None:
-            #    self.g.write("Tiempo medicion H y T > SLEEP: %d\n"%(t_HT))
+            #    self.g.writelines("Tiempo medicion H y T > SLEEP: %d\n"%(t_HT))
             #    self.g.flush()
             #elif self.g != None:
             #    self.g.writelines(["Tiempo medicion H y T: %d\n"%(t_HT),"Sensor DHT22: %d\n"%(Modulacion.sensorTemp22)])
             #    self.g.flush()
             #    if self.humidity is not None and self.temperature is not None:
-            #        self.g.write(">>> %s Temp = %.5f, Humidity = %.5f \n"%(instante,self.temperature,self.humidity))
+            #        self.g.writelines(">>> %s Temp = %.5f, Humidity = %.5f \n"%(instante,self.temperature,self.humidity))
             #        self.g.flush()
             #    else:
-            #        self.g.write("Failed to get reading, Try again!\n")
+            #        self.g.writelines("Failed to get reading, Try again!\n")
             #        self.g.flush()
                     
             time_TH_end = time.time()
@@ -250,10 +250,10 @@ class Modulacion(object):
 
     def captura_muestras(self,samplesinicio=None):
         if samplesinicio == None:
-            self.g.write("Comienza la experimentacion de datos\n")
+            self.g.writelines("Comienza la experimentacion de datos\n")
             self.g.flush()
         else:
-            self.g.write("Comienza la adquisicion de %d muestras inciales\n"%(samplesinicio))
+            self.g.writelines("Comienza la adquisicion de %d muestras inciales\n"%(samplesinicio))
             self.g.flush()
             
         Modulacion.cerrar_electrovalvulas(self)
@@ -291,7 +291,7 @@ class Modulacion(object):
         return None
     
     def handler_signal(self,signum,frame):
-        self.g.write("Se ha recibido una senial para el cambio de muestras\n")
+        self.g.writelines("Se ha recibido una senial para el cambio de muestras\n")
         self.g.flush()
         self.air_loop = True if self.air_loop == False else False
         signal.signal(signal.SIGUSR1, self.handler_signal)
@@ -352,9 +352,9 @@ class Puro(Modulacion):
         gases = " ".join(str(e) for e in gas)
         gases_id = " ".join(Modulacion.odorantes[e] for e in gas)
         self.event_TyH.wait()
-        self.f.write("%d %f %f 100 %f %f %s %s\n"%(self.muestras,valueTGS2600,RsTGS2600,self.temperature,self.humidity,instante_captura,gases))
+        self.f.writelines("%d %f %f 100 %f %f %s %s\n"%(self.muestras,valueTGS2600,RsTGS2600,self.temperature,self.humidity,instante_captura,gases))
         self.f.flush()
-        self.g.write("%s[%d] Valor(mV): %f Rs(ohmios): %f Temperatura(5V): 100 Temperatura_ambiental: %f Humedad_ambiental: %f Instante_Captura: %s Identificador_gases: %s %s\n"%
+        self.g.writelines("%s[%d] Valor(mV): %f Rs(ohmios): %f Temperatura(5V): 100 Temperatura_ambiental: %f Humedad_ambiental: %f Instante_Captura: %s Identificador_gases: %s %s\n"%
             (string,self.muestras,valueTGS2600,RsTGS2600,self.temperature,self.humidity,instante_captura,gases_id,gases))
         self.g.flush()
         self.event_TyH.set()
@@ -383,16 +383,16 @@ class Puro(Modulacion):
         return
 
     def file_TGS2600(self,ruta,nameFile,nameFile_data1,nameFile_tyh,vec_open_valve,succion,heat2600,tiempo,switch,tespera,samplesinicio):
-        self.g.write("Algoritmo temperatura constante\n")
+        self.g.writelines("Algoritmo temperatura constante\n")
         self.g.flush()
         super().file_TGS2600(ruta,nameFile,nameFile_data1,nameFile_tyh,vec_open_valve,succion,heat2600,tiempo,switch,tespera,samplesinicio)
-        self.g.write("Valor de la resistencia de carga: %d\n"%(Puro.Rl_2600))
+        self.g.writelines("Valor de la resistencia de carga: %d\n"%(Puro.Rl_2600))
         self.g.flush()
     
     def inicializar_ficheros_puertos_hilos(self,switch,samplesinicio,ct,nfile,nfolder,vsovs,vsaodrs,arg_extra=None):
         super().inicializar_ficheros_puertos_hilos(Puro.path,switch,samplesinicio,ct,nfile,nfolder,vsaodrs)
         PWM.start(Puro.heatPin2600,100)
-        self.f.write("%d %d %d %d"%(switch,samplesinicio,ct,len(vsaodrs)))
+        self.f.writelines("%d %d %d %d"%(switch,samplesinicio,ct,len(vsaodrs)))
         self.f.flush()
         ADC.setup()
         self.file_TGS2600(Puro.path+"/"+self.time_mark.strftime("%Y%m%d")+"/"+nfolder+"/",nfile+".txt",
@@ -497,13 +497,13 @@ class Regresion(Modulacion):
         
         gases = " ".join(str(e) for e in gas)
         gases_id = " ".join(Modulacion.odorantes[e] for e in gas)
-        self.g.write("Los valores de la tendencia, el slope y la temperatura son: %f, %f y %f\n"%(tendencia,slope,temperature_TGS2600))
+        self.g.writelines("Los valores de la tendencia, el slope y la temperatura son: %f, %f y %f\n"%(tendencia,slope,temperature_TGS2600))
         self.g.flush()
         self.event_TyH.wait()
-        self.f.write("%d %.5f %.5f %.5f %.5f %.5f %s %.5f %.5f %.5f %.5f %.5f %s\n"%
+        self.f.writelines("%d %.5f %.5f %.5f %.5f %.5f %s %.5f %.5f %.5f %.5f %.5f %s\n"%
                 (self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,self.temperature,self.humidity,instante_captura,slope, intercept, r_value, p_value, std_err1, gases))
         self.f.flush()
-        self.g.write("%s[%d] Valor(mV): %.5f Rs(ohmios) %.5f Temperatura: %.5f Temperatura_ambiental: %.5f Humedad_ambiental: %.5f Instante Captura: %s Slope: %.5f Intercept: %.5f R_Value: %.5f P_Value: %.5f std_err1: %.5f Identificador_gases: %s %s\n"%
+        self.g.writelines("%s[%d] Valor(mV): %.5f Rs(ohmios) %.5f Temperatura: %.5f Temperatura_ambiental: %.5f Humedad_ambiental: %.5f Instante Captura: %s Slope: %.5f Intercept: %.5f R_Value: %.5f P_Value: %.5f std_err1: %.5f Identificador_gases: %s %s\n"%
                 (string,self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,self.temperature,self.humidity,instante_captura,slope, intercept, r_value, p_value, std_err1, gases_id, gases))
         self.g.flush()
         self.event_TyH.set()
@@ -534,7 +534,7 @@ class Regresion(Modulacion):
         super().cerrar_electrovalvulas()
 
     def file_TGS2600(self,ruta,nameFile,nameFile_data1,nameFile_tyh,vec_open_valve,succion,heat2600,tiempo,switch,tespera,samplesinicio,tendencia):
-        self.g.write("Algoritmo temperatura variable y codificacion en amplitud\n")
+        self.g.writelines("Algoritmo temperatura variable y codificacion en amplitud\n")
         self.g.flush()
         super().file_TGS2600(ruta,nameFile,nameFile_data1,nameFile_tyh,vec_open_valve,succion,heat2600,tiempo,switch,tespera,samplesinicio)
         self.g.writelines(["Pin PWM de calentamiento sensor: %s\n"%(self.heatPin2600),
@@ -547,7 +547,7 @@ class Regresion(Modulacion):
         super().inicializar_ficheros_puertos_hilos(Regresion.path,suc,sw,samplesinicio,ct,nfile,nfolder,vsaodrs)
         ADC.setup()
         PWM.start(Regresion.heatPin2600,arg_extra[0]) 
-        self.f.write("%d %d %d %d\n"%(sw,samplesinicio,ct,len(vsaodrs)))
+        self.f.writelines("%d %d %d %d\n"%(sw,samplesinicio,ct,len(vsaodrs)))
         self.f.flush()
         self.file_TGS2600(Regresion.path+"/"+self.time_mark.strftime("%Y%m%d")+"/"+nfolder+"/",
             nfile+".txt",nfile+".dat","TyH"+nfile+".data",vsaodrs,suc,(arg_extra[0]*0.01*5),
@@ -754,10 +754,10 @@ class MPID(Modulacion): #ModulationPID
         gases_id = " ".join(Modulacion.odorantes[e] for e in gas)
         
         self.event_TyH.wait()
-        self.f.write("%d %.5f %.5f %.5f %.5f %.5f %.5f %.5f %s %s\n"%
+        self.f.writelines("%d %.5f %.5f %.5f %.5f %.5f %.5f %.5f %s %s\n"%
                 (self.muestras,subtarget,valueTGS2600,RSTGS,self.temp,temperaturaPID,self.temperature,self.humidity,instante_captura,gases))
         self.f.flush()
-        self.g.write("%s[%d] Target(mV): %.5f Valor sensor(mV): %.5f Rs(ohmios) %.5f Temperatura: %.5f Temperatura_PID: %.5f Temperatura_ambiental: %.5f Humedad_ambiental: %.5f Instante Captura: %s Identificador_gases: %s %s\n"%
+        self.g.writelines("%s[%d] Target(mV): %.5f Valor sensor(mV): %.5f Rs(ohmios) %.5f Temperatura: %.5f Temperatura_PID: %.5f Temperatura_ambiental: %.5f Humedad_ambiental: %.5f Instante Captura: %s Identificador_gases: %s %s\n"%
                 (string,self.muestras,subtarget,valueTGS2600,RSTGS,self.temp,temperaturaPID,self.temperature,self.humidity,instante_captura,gases_id,gases))
         self.g.flush()
         self.event_TyH.set()
@@ -785,7 +785,7 @@ class MPID(Modulacion): #ModulationPID
         for count in range(n_muestras):
 
             if self.muestras % periodo == 0 and self.muestras != 0:
-                self.g.write("Se procede a recalcular el target\n")
+                self.g.writelines("Se procede a recalcular el target\n")
                 self.g.flush()
                 self.recalcular_target(temperature_Max_Upper_Bound,temperature_Min_Upper_Bound,temperature_Max_Lower_Bound,temperature_Min_Lower_Bound,periodo)
 
@@ -806,7 +806,7 @@ class MPID(Modulacion): #ModulationPID
         heat2600,tiempo,switch,tespera,samplesinicio,period,Kp,Ki,Kd,temperature_Max_Upper_Bound,temperature_Min_Upper_Bound,
         temperature_Max_Lower_Bound,temperature_Min_Lower_Bound,maximum_peak_value,minimum_peak_value):
         
-        self.g.write("Algoritmo modulacion por PID en lazo cerrado\n")
+        self.g.writelines("Algoritmo modulacion por PID en lazo cerrado\n")
         self.g.flush()
         super().file_TGS2600(ruta,nameFile,nameFile_data1,nameFile_tyh,vec_open_valve,succion,heat2600,tiempo,switch,tespera,samplesinicio)
         self.g.writelines("Pin PWM de calentamiento sensor: %s\n"%(self.heatPin2600),
@@ -827,7 +827,7 @@ class MPID(Modulacion): #ModulationPID
     def inicializar_ficheros_puertos_hilos(self,suc,sw,samplesinicio,ct,nfile,nfolder,vsovs,vsaodrs,arg_extra=None):
         super().inicializar_ficheros_puertos_hilos(MPID.path,suc,sw,samplesinicio,ct,nfile,nfolder,vsaodrs)
         PWM.start(MPID.heatPin2600,arg_extra[0])
-        self.f.write("%d %d %d %d"%(sw,samplesinicio,ct,len(vsaodrs)))
+        self.f.writelines("%d %d %d %d"%(sw,samplesinicio,ct,len(vsaodrs)))
         self.f.flush()
         ADC.setup()
         self.file_TGS2600(MPID.path+"/"+self.time_mark.strftime("%Y%m%d")+"/"+nfolder+"/",
@@ -856,10 +856,10 @@ class MPID(Modulacion): #ModulationPID
             time_end = time.time()
 
             if time_end - time_ini < 1: time.sleep(Modulacion.SLEEP - (time_end - time_ini)) 
-            self.f.write("%d %.5f %.5f %.5f %s %s\n"%
+            self.f.writelines("%d %.5f %.5f %.5f %s %s\n"%
                 (self.muestras,valueTGS2600,RSTGS,heat,instante_captura,'4'))
             self.f.flush()
-            self.g.write("Muestras_iniciales[%d] Valor(mV): %.5f Rs(ohmios) %.5f Temperatura: %.5f Instante Captura: %s Identificador_gases: %s\n"%
+            self.g.writelines("Muestras_iniciales[%d] Valor(mV): %.5f Rs(ohmios) %.5f Temperatura: %.5f Instante Captura: %s Identificador_gases: %s\n"%
                 (self.muestras,valueTGS2600,RSTGS,heat,instante_captura,'Aire 4'))
             self.g.flush()
             
@@ -1055,7 +1055,7 @@ class Martinelli(Modulacion):
             return 1
 
     def file_TGS2600(self,ruta,nameFile,nameFile_data1,nameFile_data2,nameFile_tyh,vec_open_valve,succion,heat2600,tiempo,switch,tespera,samplesinicio,mode_execution,mode_temperature,Tmin,Tmax):
-        self.f.write("Algoritmo temperatura variable y codificacion en frecuencia\n")
+        self.f.writelines("Algoritmo temperatura variable y codificacion en frecuencia\n")
         super().file_TGS2600(ruta,nameFile,nameFile_data1,nameFile_tyh,vec_open_valve,succion,heat2600,tiempo,switch,tespera,samplesinicio)
         self.f.writelines(["Nombre del fichero de datos 2: %s"%nameFile_data2,
         	"Pin PWM de calentamiento sensor: %s"%self.heatPin2600,
@@ -1289,7 +1289,7 @@ class ImpulsosElectricos(Modulacion):
             Modulacion.file_TGS2600(self,vsovs,suc,he,tendencia,self.heatPin2600,ti2,sw,"Regresion","CAPTURAS/REGRESION/"+ str(ahora.year)+str(ahora.month)+str(ahora.day) + "/"+ nfolder + "/"  + str(samplesinicio) + "SAMPLESINICIO/",nfile+".txt",nfile+".dat","","TyH"+nfile+".data",f,1,ct,samplesinicio)
 
             print ('\n\nComienza la adquisicion. Muestras inciales: ' +str(samplesinicio)+ '\n\n')
-            self.f.write('\n\nComienza la adquisicion. Muestras inciales: ' +str(samplesinicio)+ '\n\n')
+            self.f.writelines('\n\nComienza la adquisicion. Muestras inciales: ' +str(samplesinicio)+ '\n\n')
             self.f.flush()
             Modulacion.cerrar_electrovalvulas()
             
@@ -1297,7 +1297,7 @@ class ImpulsosElectricos(Modulacion):
             self.captura_odorante([4],samplesinicio,"Muestra Regresion ini",1,he,samplesinicio,tendencia)
 
             print ('\n\nComienza la experimentacion\n')
-            self.f.write('\n\nComienza la experimentacion\n')
+            self.f.writelines('\n\nComienza la experimentacion\n')
             self.f.flush()
 
             for i in range(len(vsovs)):
