@@ -496,18 +496,18 @@ class Regresion(Modulacion):
         self.x.append(self.muestras)
         self.concentTGS2600.append(valueTGS2600)
         
-        gases = " ".join(str(e) for e in gas)
-        gases_id = " ".join(Modulacion.odorantes[e] for e in gas)
-        self.g.writelines("Los valores de la tendencia, el slope y la temperatura son: %f, %f y %f\n"%(tendencia,slope,temperature_TGS2600))
-        self.g.flush()
-        self.event_TyH.wait()
-        self.f.writelines("%d %.5f %.5f %.5f %.5f %.5f %s %.5f %.5f %.5f %.5f %.5f %s\n"%
-                (self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,self.temperature,self.humidity,instante_captura,slope, intercept, r_value, p_value, std_err1, gases))
-        self.f.flush()
-        self.g.writelines("%s[%d] Valor(mV): %.5f Rs(ohmios) %.5f Temperatura: %.5f Temperatura_ambiental: %.5f Humedad_ambiental: %.5f Instante Captura: %s Slope: %.5f Intercept: %.5f R_Value: %.5f P_Value: %.5f std_err1: %.5f Identificador_gases: %s %s\n"%
-                (string,self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,self.temperature,self.humidity,instante_captura,slope, intercept, r_value, p_value, std_err1, gases_id, gases))
-        self.g.flush()
-        self.event_TyH.set()
+        #gases = " ".join(str(e) for e in gas)
+        #gases_id = " ".join(Modulacion.odorantes[e] for e in gas)
+        #self.g.writelines("Los valores de la tendencia, el slope y la temperatura son: %f, %f y %f\n"%(tendencia,slope,temperature_TGS2600))
+        #self.g.flush()
+        #self.event_TyH.wait()
+        #self.f.writelines("%d %.5f %.5f %.5f %.5f %.5f %s %.5f %.5f %.5f %.5f %.5f %s\n"%
+        #        (self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,self.temperature,self.humidity,instante_captura,slope, intercept, r_value, p_value, std_err1, gases))
+        #self.f.flush()
+        #self.g.writelines("%s[%d] Valor(mV): %.5f Rs(ohmios) %.5f Temperatura: %.5f Temperatura_ambiental: %.5f Humedad_ambiental: %.5f Instante Captura: %s Slope: %.5f Intercept: %.5f R_Value: %.5f P_Value: %.5f std_err1: %.5f Identificador_gases: %s %s\n"%
+        #        (string,self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,self.temperature,self.humidity,instante_captura,slope, intercept, r_value, p_value, std_err1, gases_id, gases))
+        #self.g.flush()
+        #self.event_TyH.set()
         time_end = time.time()
         print(time_end-time_ini,gas)
         
