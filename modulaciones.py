@@ -229,7 +229,7 @@ class Modulacion(object):
             #        self.g.flush()
                     
             time_TH_end = time.time()
-            if (time_TH_end-tick_HT) < 1: time.sleep(Modulacion.SLEEP_tyh-(time_TH_end-tick_HT))
+            time.sleep(Modulacion.SLEEP_tyh-(time_TH_end-tick_HT))
 
         return 0
     
@@ -242,7 +242,7 @@ class Modulacion(object):
         # Se crea el hilo de lectura y escritura de la temperatura y humedad ambientales
         self.thread = Thread(target=self.measure_tyh,args=())
         self.thread.do_run = True
-        #self.thread.start()
+        self.thread.start()
         
         # Se arranca el motor
         PWM.start(Modulacion.motorPin,succion)
