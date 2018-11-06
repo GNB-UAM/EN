@@ -66,9 +66,6 @@ class Modulacion(object):
         #Modulacion.event_write_thread = Event() 
         self.activar_GPIO_valvulas() # Puede ser un foco de problemas, puede que haya que cambiarlo
         self.humidity, self.temperature = DHT.read_retry(Modulacion.sensorTemp22,Modulacion.Temp22,30,1,None)
-        ############# QUITARLO ##############
-        #self.humidity, self.temperature = 0,0
-        #####################################
 
     def daemonizar(stdin='stdin.txt',stdout='stdout.txt',stderr='stderr.txt'): 
         try:
@@ -207,11 +204,7 @@ class Modulacion(object):
             tick_HT = time.time()
             self.event_TyH.wait()
             self.humidity, self.temperature = DHT.read_retry(Modulacion.sensorTemp22,Modulacion.Temp22,30,1,None) #15,1,None ¿?
-            #t_HT = time.time()-tick_HT
-            #instante = datetime.now()
-            ############# QUITARLO ##############
-            #self.humidity, self.temperature = 0,0
-            #####################################
+            self.g.write("Instante_captura: %s Tiempo_medicion: %.5f Temp: %.5f, Humidity: %.5f \n"%(datetime.now(),time.time()-tick_HT,self.temperature,self.humidity))
             self.event_TyH.set() # Finalizo bloqueo una vez que he actualizado los valores
             
             #Cuanto duerme en funcion de lo que tarde en H y T
@@ -496,18 +489,18 @@ class Regresion(Modulacion):
         self.x.append(self.muestras)
         self.concentTGS2600.append(valueTGS2600)
         
-        #gases = " ".join(str(e) for e in gas)
-        #gases_id = " ".join(Modulacion.odorantes[e] for e in gas)
-        #self.g.writelines("Los valores de la tendencia, el slope y la temperatura son: %f, %f y %f\n"%(tendencia,slope,temperature_TGS2600))
-        #self.g.flush()
-        #self.event_TyH.wait()
-        #self.f.writelines("%d %.5f %.5f %.5f %.5f %.5f %s %.5f %.5f %.5f %.5f %.5f %s\n"%
-        #        (self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,self.temperature,self.humidity,instante_captura,slope, intercept, r_value, p_value, std_err1, gases))
-        #self.f.flush()
-        #self.g.writelines("%s[%d] Valor(mV): %.5f Rs(ohmios) %.5f Temperatura: %.5f Temperatura_ambiental: %.5f Humedad_ambiental: %.5f Instante Captura: %s Slope: %.5f Intercept: %.5f R_Value: %.5f P_Value: %.5f std_err1: %.5f Identificador_gases: %s %s\n"%
-        #        (string,self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,self.temperature,self.humidity,instante_captura,slope, intercept, r_value, p_value, std_err1, gases_id, gases))
-        #self.g.flush()
-        #self.event_TyH.set()
+        gases = " ".join(str(e) for e in gas)
+        gases_id = " ".join(Modulacion.odorantes[e] for e in gas)
+        self.g.writelines("Los valores de la tendencia, el slope y la temperatura son: %f, %f y %f\n"%(tendencia,slope,temperature_TGS2600))
+        self.g.flush()
+        self.event_TyH.wait()
+        self.f.writelines("%d %.5f %.5f %.5f %.5f %.5f %s %.5f %.5f %.5f %.5f %.5f %s\n"%
+                (self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,self.temperature,self.humidity,instante_captura,slope, intercept, r_value, p_value, std_err1, gases))
+        self.f.flush()
+        self.g.writelines("%s[%d] Valor(mV): %.5f Rs(ohmios) %.5f Temperatura: %.5f Temperatura_ambiental: %.5f Humedad_ambiental: %.5f Instante Captura: %s Slope: %.5f Intercept: %.5f R_Value: %.5f P_Value: %.5f std_err1: %.5f Identificador_gases: %s %s\n"%
+                (string,self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,self.temperature,self.humidity,instante_captura,slope, intercept, r_value, p_value, std_err1, gases_id, gases))
+        self.g.flush()
+        self.event_TyH.set()
         time_end = time.time()
         print(time_end-time_ini,gas)
         
