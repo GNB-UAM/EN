@@ -204,7 +204,7 @@ class Modulacion(object):
             tick_HT = time.time()
             #self.event_TyH.wait()
             self.humidity, self.temperature = DHT.read_retry(Modulacion.sensorTemp22,Modulacion.Temp22,30,1,None) #15,1,None ¿?
-            self.g.write("Instante_captura: %s Tiempo_medicion: %.5f Temp: %.5f, Humidity: %.5f \n"%(datetime.now(),time.time()-tick_HT,self.temperature,self.humidity))
+            self.g.write("Instante_captura: %s Tiempo_medicion: %.5f Temp: %.5f, Humidity: %.5f \n"%(datetime.now(),time.time()-tick_HT,self.temperature,self.humidity)) if self.g != None
             self.g.flush()
             #self.event_TyH.set() # Finalizo bloqueo una vez que he actualizado los valores
             
