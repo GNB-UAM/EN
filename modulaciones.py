@@ -222,9 +222,8 @@ class Modulacion(object):
             #    else:
             #        self.g.writelines("Failed to get reading, Try again!\n")
             #        self.g.flush()
-                    
-            time_TH_end = time.time()
-            time.sleep(Modulacion.SLEEP_tyh-(time_TH_end-tick_HT))
+            print(Modulacion.SLEEP_tyh-(time.time()-tick_HT))
+            time.sleep(Modulacion.SLEEP_tyh-(time.time()-tick_HT))
 
         return 0
     
@@ -233,12 +232,8 @@ class Modulacion(object):
         self.f,self.g = os.fdopen(os.open(ruta_fichero_data, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644), 'w'),os.fdopen(os.open(ruta_fichero, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644), 'w')
        
         self.g.writelines(["Ruta Fichero: %s\n"%(ruta_fichero),"Ruta Fichero de datos: %s\n"%(ruta_fichero_data)])
-        
-        # Se crea el hilo de lectura y escritura de la temperatura y humedad ambientales
-        self.thread = Thread(target=self.measure_tyh,args=())
-        self.thread.do_run = True
-        self.thread.start()
-        
+        self.g.flush()
+                
         # Se arranca el motor
         PWM.start(Modulacion.motorPin,succion)
 
@@ -247,10 +242,9 @@ class Modulacion(object):
     def captura_muestras(self,samplesinicio=None):
         if samplesinicio == None:
             self.g.writelines("Comienza la experimentacion de datos\n")
-            self.g.flush()
         else:
             self.g.writelines("Comienza la adquisicion de %d muestras inciales\n"%(samplesinicio))
-            self.g.flush()
+        self.g.flush()
             
         Modulacion.cerrar_electrovalvulas(self)
 
@@ -293,7 +287,13 @@ class Modulacion(object):
         signal.signal(signal.SIGUSR1, self.handler_signal)
 
     def iniciar_captura_datos(self):
+        # Fija la senial para el cambio de odorantes
         signal.signal(signal.SIGUSR1, self.handler_signal)
+        # Se crea el hilo de lectura y escritura de la temperatura y humedad ambientales
+        self.thread = Thread(target=self.measure_tyh,args=())
+        self.thread.do_run = True
+        self.thread.start()
+        # Inicia la captura de datos
         self.captura_datos()
         return
 
