@@ -201,13 +201,13 @@ class Modulacion(object):
         #Lectura humedad y temperatura
         while getattr(self.thread,"do_run",True):
             # Fijo bloqueo para actualizar valores de TyH
+            self.event_TyH.wait()
             tick_HT = time.time()
-            #self.event_TyH.wait()
             self.humidity, self.temperature = DHT.read_retry(Modulacion.sensorTemp22,Modulacion.Temp22,30,1,None) #15,1,None ¿?
             if self.g != None: 
                 self.g.write("Instante_captura: %s Tiempo_medicion: %.5f Temp: %.5f, Humidity: %.5f \n"%(datetime.now(),time.time()-tick_HT,self.temperature,self.humidity))
                 self.g.flush()
-            #self.event_TyH.set() # Finalizo bloqueo una vez que he actualizado los valores
+            self.event_TyH.set() # Finalizo bloqueo una vez que he actualizado los valores
             
             #Cuanto duerme en funcion de lo que tarde en H y T
             #if t_HT > Modulacion.SLEEP_tyh and self.g != None:
@@ -222,7 +222,7 @@ class Modulacion(object):
             #    else:
             #        self.g.writelines("Failed to get reading, Try again!\n")
             #        self.g.flush()
-            print(Modulacion.SLEEP_tyh-(time.time()-tick_HT))
+            #print(Modulacion.SLEEP_tyh-(time.time()-tick_HT))
             time.sleep(Modulacion.SLEEP_tyh-(time.time()-tick_HT))
 
         return 0
@@ -340,20 +340,20 @@ class Puro(Modulacion):
                 
         #Se calcula el valor de la resistencia interna del sensor
         RsTGS2600=((Modulacion.Vcc*Puro.Rl_2600)/(valueTGS2600/1000.))-Puro.Rl_2600
-        time_end = time.time()
-        print(time_end-time_ini,gas)
-        
+                
               
         # Pasamos a la cola los valores que va a escribir
         gases = " ".join(str(e) for e in gas)
         gases_id = " ".join(Modulacion.odorantes[e] for e in gas)
-        #self.event_TyH.wait()
+        self.event_TyH.wait()
         self.f.writelines("%d %f %f 100 %f %f %s %s\n"%(self.muestras,valueTGS2600,RsTGS2600,self.temperature,self.humidity,instante_captura,gases))
         self.f.flush()
         self.g.writelines("%s[%d] Valor(mV): %f Rs(ohmios): %f Temperatura(5V): 100 Temperatura_ambiental: %f Humedad_ambiental: %f Instante_Captura: %s Identificador_gases: %s %s\n"%
             (string,self.muestras,valueTGS2600,RsTGS2600,self.temperature,self.humidity,instante_captura,gases_id,gases))
         self.g.flush()
-        #self.event_TyH.set()
+        self.event_TyH.set()
+        time_end = time.time()
+        #print(time_end-time_ini,gas)
 
         return (time_end - time_ini)
 
@@ -372,7 +372,7 @@ class Puro(Modulacion):
         super().abrir_electrovalvulas(vector_valvulas)
         for count in range(n_muestras):
             value_sleep = self.valor_sensor(string,vector_odorantes)
-            if value_sleep < 1: time.sleep(Modulacion.SLEEP - value_sleep)
+            time.sleep(Modulacion.SLEEP - value_sleep)
             self.muestras+=1
         super().cerrar_electrovalvulas()
 
@@ -495,14 +495,16 @@ class Regresion(Modulacion):
         gases_id = " ".join(Modulacion.odorantes[e] for e in gas)
         self.g.writelines("Los valores de la tendencia, el slope y la temperatura son: %f, %f y %f\n"%(tendencia,slope,temperature_TGS2600))
         self.g.flush()
+        self.event_TyH.wait()
         self.f.writelines("%d %.5f %.5f %.5f %.5f %.5f %s %.5f %.5f %.5f %.5f %.5f %s\n"%
                 (self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,self.temperature,self.humidity,instante_captura,slope, intercept, r_value, p_value, std_err1, gases))
         self.f.flush()
         self.g.writelines("%s[%d] Valor(mV): %.5f Rs(ohmios) %.5f Temperatura: %.5f Temperatura_ambiental: %.5f Humedad_ambiental: %.5f Instante Captura: %s Slope: %.5f Intercept: %.5f R_Value: %.5f P_Value: %.5f std_err1: %.5f Identificador_gases: %s %s\n"%
                 (string,self.muestras,valueTGS2600,RsTGS2600,temperature_TGS2600,self.temperature,self.humidity,instante_captura,slope, intercept, r_value, p_value, std_err1, gases_id, gases))
         self.g.flush()
+        self.event_TyH.set()
         time_end = time.time()
-        print(time_end-time_ini,gas)
+        #print(time_end-time_ini,gas)
         
         return (time_end-time_ini)
 
@@ -523,7 +525,7 @@ class Regresion(Modulacion):
         super().abrir_electrovalvulas(vector_valvulas)
         for count in range(n_muestras):
             value_sleep = self.valor_sensor(heat2600,string,opcion,vector_odorantes,samplesinicio,tendencia)
-            if value_sleep < 1: time.sleep(Modulacion.SLEEP - value_sleep)
+            time.sleep(Modulacion.SLEEP - value_sleep)
             self.muestras+=1
         super().cerrar_electrovalvulas()
 
@@ -747,19 +749,19 @@ class MPID(Modulacion): #ModulationPID
         gases = " ".join(str(e) for e in gas)
         gases_id = " ".join(Modulacion.odorantes[e] for e in gas)
         
-        #self.event_TyH.wait()
+        self.event_TyH.wait()
         self.f.writelines("%d %.5f %.5f %.5f %.5f %.5f %.5f %.5f %s %s\n"%
                 (self.muestras,subtarget,valueTGS2600,RSTGS,self.temp,temperaturaPID,self.temperature,self.humidity,instante_captura,gases))
         self.f.flush()
         self.g.writelines("%s[%d] Target(mV): %.5f Valor sensor(mV): %.5f Rs(ohmios) %.5f Temperatura: %.5f Temperatura_PID: %.5f Temperatura_ambiental: %.5f Humedad_ambiental: %.5f Instante Captura: %s Identificador_gases: %s %s\n"%
                 (string,self.muestras,subtarget,valueTGS2600,RSTGS,self.temp,temperaturaPID,self.temperature,self.humidity,instante_captura,gases_id,gases))
         self.g.flush()
-        #self.event_TyH.set()
+        self.event_TyH.set()
 
         self.lastError, self.addError, self.temp = error,ei,temperaturaPID
 
         time_end = time.time()
-        print(time_end-time_ini)
+        #print(time_end-time_ini)
         return [time_end - time_ini,valueTGS2600]
 
     def captura_odorante(self,vector_valvulas,vector_odorantes,n_muestras,string,periodo, Kp, Kd, Ki, 
@@ -785,7 +787,7 @@ class MPID(Modulacion): #ModulationPID
 
             subtarget = self.target[self.muestras%periodo]
             ret_values = self.valor_sensor(string,vector_odorantes, subtarget, Kp, Kd, Ki, temperature_Max_Upper_Bound, temperature_Min_Lower_Bound)
-            if ret_values[0] < 1: time.sleep(Modulacion.SLEEP - ret_values[0])
+            time.sleep(Modulacion.SLEEP - ret_values[0])
             
             
             self.max_PID_temp,self.max_value = self.calculate_min_max_value(subtarget, ret_values[1], max, self.max_value, self.temp, self.max_PID_temp)
