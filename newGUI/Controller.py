@@ -1,59 +1,82 @@
 # -*- coding: utf-8 -*-
 
-import new_GUI as NG
+#import new_GUI as NG
+from new_GUI import *
+import sys
 
 class Controller(QtWidgets.QMainWindow):
-	
-	def __init__(self, parent=None):
-		QtWidgets.QMainWindow.__init__(self,parent)
-		self.ui = Ui_MainWindow()
-		self.ui.setupUi(self)
-		self.setWindowIcon(QtGui.QIcon('assets/logo_rthy.png'))
-		self.expand=False
-		self.show()
+        
+        def __init__(self, parent=None):
+                QtWidgets.QMainWindow.__init__(self,parent)
+                self.ui = Ui_MainWindow()
+                self.ui.setupUi(self)
+                #self.setWindowIcon(QtGui.QIcon('assets/logo_rthy.png'))
+                self.expand=True
+                self.show()
 
-		self.labels,self.lines = [self.ui.Tendencia,self.ui.TempSensor,self.ui.ModoEjecucion,
-			self.ui.VariacionTemperatura,self.ui.TempeaturaMaxima,self.ui.TemperaturaMinima,self.ui.PeriodoSenialReferencia,
-			self.ui.LimMaximoSup,self.ui.LimMinimoSup,self.ui.LimMaximoInf,self.ui.LimMinimoInf,self.ui.Alfa,self.ui.PicoMaximo,
-			self.ui.PicoMinimo],[self.ui.TendenciaEdit,self.ui.TempSensorEdit,self.ui.ModoEjecucionEdit,
-			self.ui.VariacionTemperaturaEdit,self.ui.TempeaturaMaximaEdit,self.ui.TemperaturaMinimaEdit,
-			self.ui.PeriodoSenialReferenciaEdit,self.ui.LimMaximoSupEdit,self.ui.LimMinimoSupEdit,self.ui.LimMaximoInfEdit,
-			self.ui.LimMinimoInfEdit,self.ui.AlfaEdit,self.ui.PicoMaximoEdit,self.ui.PicoMinimoEdit]
+                self.REGRESION,self.MARTINELLI,self.PID = 0,1,2
+                self.modulations = [self.ui.RegresionWidget,self.ui.MartinelliWidget,self.ui.PIDWidget]
 
-		self.Modulation.on_Modulation_currentIndexChanged.connect(self.seleccionar_modulacion)
-		self.reiniciar_valores()
+                self.ui.Modulation.currentIndexChanged.connect(self.seleccionar_modulacion)
+                self.ui.pushButton.clicked.connect(self.obtener_informacion_widgets)
+                #self.reiniciar_widgets()
 
-	def seleccionar_modulacion(self):
+        def seleccionar_modulacion(self):
 
-		selected = self.iu.Modulation.currentText();
-		if selected == "Puro":
-			self.reiniciar_valores()
-		elif selected == "Regresion":
-			ini,fin = 0,2
-		elif selected == "Martinelli":
-			ini,fin = 2,6
-		elif selected == "PID":
-			ini,fin = 6,len(self.labels)
+            selected = self.ui.Modulation.currentText()
+            self.reiniciar_widgets()
+            if selected == "Regresion":
+                self.modulations[self.REGRESION].show()
+            elif selected == "Martinelli":
+                self.modulations[self.MARTINELLI].show()
+            elif selected == "PID":
+                self.modulations[self.PID].show()
+            
+            return
 
-		for i in range(6,len(self.labels)):
-			self.labels[i].show()
-			self.lines[i].show()
+        def reiniciar_widgets(self):
+            
+            for widgets in self.modulations:
+                widgets.hide()
+        
+            return
 
+        def obtener_informacion_widgets(self):
 
-	def reiniciar_valores(self):
+            for widget_count in range(1,self.ui.ExperimentLayout.count()):
+                if widget_count%2 == 0:
+                    labels.append(self.ui.ExperimentLayout.itemAt(i).widget().objectName())
+                else:
+                    entries.append(self.ui.ExperimentLayout.itemAt(i).widget().text())
+                        
+            selected = self.ui.Modulation.currentText()
+            if selected == "Regresion":
+                for widget_count in range(1,self.ui.ExperimentLayout.count()):
+                    if widget_count%2 == 0:
+                        labels.append(self.ui.ExperimentLayout.itemAt(i).widget().objectName())
+                    else:
+                        entries.append(self.ui.ExperimentLayout.itemAt(i).widget().text())
+            elif selected == "Martinelli":
+                for widget_count in range(1,self.ui.ExperimentLayout.count()):
+                    if widget_count%2 == 0:
+                        labels.append(self.ui.ExperimentLayout.itemAt(i).widget().objectName())
+                    else:
+                        entries.append(self.ui.ExperimentLayout.itemAt(i).widget().text())
+            elif selected == "PID":
+                for widget_count in range(1,self.ui.ExperimentLayout.count()):
+                    if widget_count%2 == 0:
+                        labels.append(self.ui.ExperimentLayout.itemAt(i).widget().objectName())
+                    else:
+                        entries.append(self.ui.ExperimentLayout.itemAt(i).widget().text())
+            
 
-		for label,line in zip(self.labels,self.lines):
-			label.hide()
-			line.hide()
-
-	
-	def iniciar_experimento(self):
-		
-		diccionario = {}
-		for i in range(ini,fin):
-			diccionario[self.labels[i][:2]+self.labels[i][-2:]] = self.lines[i].text()
-		
-		tc.tratamiento_fichero_configuracion(diccionario)
+        def iniciar_experimento(self):
+                
+                diccionario = {}
+                for i in range(ini,fin):
+                        diccionario[self.labels[i][:2]+self.labels[i][-2:]] = self.lines[i].text()
+                
+                tc.tratamiento_fichero_configuracion(diccionario)
 
 
 
@@ -61,8 +84,8 @@ class Controller(QtWidgets.QMainWindow):
 #   MAIN   #
 ############
 if __name__ == "__main__":
-	app = QtWidgets.QApplication(sys.argv)
-	myapp = Interface()
-	myapp.resize(510, 0)
-	myapp.show()
-	sys.exit(app.exec_())	
+        app = QtWidgets.QApplication(sys.argv)
+        myapp = Controller()
+        myapp.resize(510, 0)
+        myapp.show()
+sys.exit(app.exec_())   
