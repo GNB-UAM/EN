@@ -19,7 +19,13 @@ class Controller(QtWidgets.QMainWindow):
 
                 self.ui.Modulation.currentIndexChanged.connect(self.seleccionar_modulacion)
                 self.ui.pushButton.clicked.connect(self.obtener_informacion_widgets)
-                #self.reiniciar_widgets()
+                self.ui.StartButton.clicked.connect(self.iniciar_experimento)
+                self.ui.LoadButton.clicked.connect(self.cargar_datos)
+                self.ui.SaveButton.clicked.connect(self.guardar_datos)
+                self.reiniciar_widgets()
+
+        def guardar_datos(self):
+            x=3
 
         def seleccionar_modulacion(self):
 

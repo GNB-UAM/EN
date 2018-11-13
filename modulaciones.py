@@ -805,7 +805,7 @@ class MPID(Modulacion): #ModulationPID
         self.g.writelines("Algoritmo modulacion por PID en lazo cerrado\n")
         self.g.flush()
         super().file_TGS2600(ruta,nameFile,nameFile_data1,nameFile_tyh,vec_open_valve,succion,heat2600,tiempo,switch,tespera,samplesinicio)
-        self.g.writelines("Pin PWM de calentamiento sensor: %s\n"%(self.heatPin2600),
+        self.g.writelines(["Pin PWM de calentamiento sensor: %s\n"%(self.heatPin2600),
             "Pin ADC sensor: %s\n"%(self.sensorPin2600),
             "Valor de la resistencia de carga: %d\n"%(MPID.Rl_2600),
             "Control Proporcional: %f\n"%(Kp),
@@ -817,7 +817,7 @@ class MPID(Modulacion): #ModulationPID
             "Limite maximo inferior: %d\n"%(temperature_Max_Lower_Bound),
             "Limite minimo inferior: %d\n"%(temperature_Min_Lower_Bound),
             "Valor pico inicial maximo: %f\n"%(maximum_peak_value),
-            "Valor pico inicial minimo: %f\n"%(minimum_peak_value))
+            "Valor pico inicial minimo: %f\n"%(minimum_peak_value)])
         self.g.flush()
     
     def inicializar_ficheros_puertos_hilos(self,suc,sw,samplesinicio,ct,nfile,nfolder,vsovs,vsaodrs,arg_extra=None):
