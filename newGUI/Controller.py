@@ -3,7 +3,7 @@
 #import new_GUI as NG
 from new_GUI import *
 import sys
-from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtWidgets import QFileDialog,QMessageBox
 from PyQt5.QtCore import *
 
 class Controller(QtWidgets.QMainWindow):
@@ -13,7 +13,7 @@ class Controller(QtWidgets.QMainWindow):
                 self.ui = Ui_MainWindow()
                 self.ui.setupUi(self)
                 #self.setWindowIcon(QtGui.QIcon('assets/logo_rthy.png'))
-                self.expand=True
+                self.expand=False
                 self.show()
 
                 self.REGRESION,self.MARTINELLI,self.PID = 0,1,2
@@ -24,7 +24,12 @@ class Controller(QtWidgets.QMainWindow):
                 #self.ui.StartButton.clicked.connect(self.iniciar_experimento)
                 self.ui.LoadButton.clicked.connect(self.cargar_datos)
                 self.ui.SaveButton.clicked.connect(self.guardar_datos)
+                self.ui.SSHButton.clicked.connect(self.conexion)
                 self.reiniciar_widgets()
+            
+        def conexion(self):
+
+
 
         def seleccionar_modulacion(self):
 
@@ -85,8 +90,8 @@ class Controller(QtWidgets.QMainWindow):
 
         def guardar_datos(self):
             filename = QFileDialog.getOpenFileName()
-            print(filename[0])
             file = open(filename[0],'w')
+            file.write("Modulation: %s\n"%(self.ui.Modulation.currentIndex()+1))
             for i in range(self.ui.verticalLayout_6.count()):
                 file.write("%s: %s\n"%(self.ui.verticalLayout_6.itemAt(i).widget().text(),self.ui.verticalLayout_7.itemAt(i).widget().text()))
            
@@ -107,16 +112,34 @@ class Controller(QtWidgets.QMainWindow):
             return
 
         def cargar_datos(self):
+            self.resetear_entradas()
             filename = QFileDialog.getOpenFileName()
             file = open(filename[0],'r')
+            label,entry = file.readline().split(':')
+            self.ui.Modulation.setCurrentIndex(int(entry)-1)
             for line in file.readlines():
                 label,entry = line.split(':')
                 try:
-                    self.ui.PuroLayout.findChild(QObject,label[:2]+label[-2:]+"Edit").setText(entry)
+                    self.findChild(QObject,label.replace(" ","_")+"_Edit").setText(entry)
                 except:
-                    print(label[:2]+label[-2:])
-                    #Mensaje de error
+                    QMessageBox.critical(self,"Error","Error ocurrido al cargar los datos. El identificador: %s no existe."%label)
+                    return
             file.close()
+            return
+
+        def resetar_entradas(self):
+            
+            for entry in self.ui.PuroEntriesLayout.children():
+                entry.clear()
+
+            for widget in self.modulations:
+                for entry in widget.children()[int((len(widget.children())+1)/2):]:
+                    entry.clear()
+
+            for entry in self.ui.PlatformEntriesLayout.children():
+                entry.clear()
+
+            return
     
 ############
 #   MAIN   #
