@@ -3,6 +3,8 @@
 #import new_GUI as NG
 from new_GUI import *
 import sys
+from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtCore import *
 
 class Controller(QtWidgets.QMainWindow):
         
@@ -19,13 +21,10 @@ class Controller(QtWidgets.QMainWindow):
 
                 self.ui.Modulation.currentIndexChanged.connect(self.seleccionar_modulacion)
                 self.ui.pushButton.clicked.connect(self.obtener_informacion_widgets)
-                self.ui.StartButton.clicked.connect(self.iniciar_experimento)
+                #self.ui.StartButton.clicked.connect(self.iniciar_experimento)
                 self.ui.LoadButton.clicked.connect(self.cargar_datos)
                 self.ui.SaveButton.clicked.connect(self.guardar_datos)
                 self.reiniciar_widgets()
-
-        def guardar_datos(self):
-            x=3
 
         def seleccionar_modulacion(self):
 
@@ -84,8 +83,41 @@ class Controller(QtWidgets.QMainWindow):
                 
                 tc.tratamiento_fichero_configuracion(diccionario)
 
+        def guardar_datos(self):
+            filename = QFileDialog.getOpenFileName()
+            print(filename[0])
+            file = open(filename[0],'w')
+            for i in range(self.ui.verticalLayout_6.count()):
+                file.write("%s: %s\n"%(self.ui.verticalLayout_6.itemAt(i).widget().text(),self.ui.verticalLayout_7.itemAt(i).widget().text()))
+           
+            """ 
+            La lista devuelta por children() tiene como 
+            primer elemento un layout que no queremos. 
+            Los primeros elementos, hasta la mitad, 
+            son las etiquetas y los ultimos son los 
+            campos para rellenar, de ahí la indexacion rara.
+            """
+            for widget in self.modulations:
+                if widget.isVisible() == True:
+                    for label,entry in zip(widget.children()[1:int((len(widget.children())+1)/2)],widget.children()[int((len(widget.children())+1)/2):]):
+                        file.write("%s: %s\n"%(label.text(),entry.text()))
 
 
+            file.close()
+            return
+
+        def cargar_datos(self):
+            filename = QFileDialog.getOpenFileName()
+            file = open(filename[0],'r')
+            for line in file.readlines():
+                label,entry = line.split(':')
+                try:
+                    self.ui.PuroLayout.findChild(QObject,label[:2]+label[-2:]+"Edit").setText(entry)
+                except:
+                    print(label[:2]+label[-2:])
+                    #Mensaje de error
+            file.close()
+    
 ############
 #   MAIN   #
 ############
