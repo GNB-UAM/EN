@@ -2,10 +2,11 @@
 
 #import new_GUI as NG
 from new_GUI import *
+from new_GUI_tab import *
 import sys
 from PyQt5.QtWidgets import QFileDialog,QMessageBox
 from PyQt5.QtCore import *
-
+import os
 class Controller(QtWidgets.QMainWindow):
         
         def __init__(self, parent=None):
@@ -16,19 +17,47 @@ class Controller(QtWidgets.QMainWindow):
                 self.expand=False
                 self.show()
 
+                self.window=QtWidgets.QMainWindow()
+                self.conexion_tab = Ui_SSHWindow()
+                self.conexion_tab.setupUi(self.window)
+                
                 self.REGRESION,self.MARTINELLI,self.PID = 0,1,2
                 self.modulations = [self.ui.RegresionWidget,self.ui.MartinelliWidget,self.ui.PIDWidget]
 
                 self.ui.Modulation.currentIndexChanged.connect(self.seleccionar_modulacion)
-                self.ui.pushButton.clicked.connect(self.obtener_informacion_widgets)
-                #self.ui.StartButton.clicked.connect(self.iniciar_experimento)
+                #self.ui.pushButton.clicked.connect(self.obtener_informacion_widgets)
+                self.ui.StartButton.clicked.connect(self.conexion)
                 self.ui.LoadButton.clicked.connect(self.cargar_datos)
                 self.ui.SaveButton.clicked.connect(self.guardar_datos)
                 self.ui.SSHButton.clicked.connect(self.conexion)
+                self.conexion_tab.OKButton.clicked.connect(self.SSH_obtener_parametros_conexion)
+                self.conexion_tab.CheckButton.clicked.connect(self.SSH_comprobar_conexion)
+                self.conexion_tab.ResetButton.clicked.connect(self.SSH_resetear_parametros_conexion)
+                self.ssh_user,self.ssh_password,self.ssh_address,self.ssh_port,self.ssh_path = None,None,None,None,None
+
                 self.reiniciar_widgets()
             
         def conexion(self):
+            self.window.show()
+           
+        def SSH_obtener_parametros_conexion(self):
+            self.ssh_user,self.ssh_password,self.ssh_address,self.ssh_port,self.ssh_path = self.conexion_tab.User_Edit.text(),self.conexion_tab.Password_Edit.text(),self.conexion_tab.Address_Edit.text(),self.conexion_tab.Port_Edit.text(),self.conexion_tab.Path_remote_Edit.text()
+            return
 
+        def SSH_resetear_parametros_conexion(self):
+            self.ssh_user = self.ssh_password = self.ssh_address = self.ssh_port = self.ssh_path = None
+            for widget in self.conexion_tab.SSHEntriesLayout.children():
+                widget.clear()
+            return
+
+        def SSH_comprobar_conexion(self):
+            response = os.system("ping -c 1 "+self.ssh_address)
+            if response == 0:
+                QMessageBox.information(self,"Conexion Correcta","La conexión es correcta")
+            else:
+                QMessageBox.warning(self,"Conexion Erronea","El destino no se encuentra")
+            
+            return
 
 
         def seleccionar_modulacion(self):
