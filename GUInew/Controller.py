@@ -21,6 +21,10 @@ class Controller(QtWidgets.QMainWindow):
                 self.conexion_tab = Ui_SSHWindow()
                 self.conexion_tab.setupUi(self.window)
                 
+                self.plot_window = QtWidgets.QMainWindow()
+                self.plot_tab = Ui_plotwindow()
+                self.plot_tab.setupUi(self.plot_window)
+
                 self.REGRESION,self.MARTINELLI,self.PID = 0,1,2
                 self.modulations = [self.ui.RegresionWidget,self.ui.MartinelliWidget,self.ui.PIDWidget]
 
@@ -30,16 +34,25 @@ class Controller(QtWidgets.QMainWindow):
                 self.ui.LoadButton.clicked.connect(self.cargar_datos)
                 self.ui.SaveButton.clicked.connect(self.guardar_datos)
                 self.ui.SSHButton.clicked.connect(self.conexion)
+                self.ui.ConfPlotButton.clicked.connect(self.configurar_representacion)
+                self.ui.SSHcheckBox.stateChanged.connect(self.habilitar_SSH)
                 self.conexion_tab.OKButton.clicked.connect(self.SSH_obtener_parametros_conexion)
                 self.conexion_tab.CheckButton.clicked.connect(self.SSH_comprobar_conexion)
                 self.conexion_tab.ResetButton.clicked.connect(self.SSH_resetear_parametros_conexion)
                 self.ssh_user,self.ssh_password,self.ssh_address,self.ssh_port,self.ssh_path = None,None,None,None,None
 
                 self.reiniciar_widgets()
-            
+           
+        def habilitar_SSH(self):
+            self.SSHButton.setEnabled(True) if self.ui.SSHcheckBox.isChecked() == True else self.SSHButton.setEnabled(False)
+            return
+
         def conexion(self):
             self.window.show()
-           
+         
+        def configurar_representacion(self):
+            self.plot_window.show()
+        
         def SSH_obtener_parametros_conexion(self):
             self.ssh_user,self.ssh_password,self.ssh_address,self.ssh_port,self.ssh_path = self.conexion_tab.User_Edit.text(),self.conexion_tab.Password_Edit.text(),self.conexion_tab.Address_Edit.text(),self.conexion_tab.Port_Edit.text(),self.conexion_tab.Path_remote_Edit.text()
             return
@@ -169,6 +182,18 @@ class Controller(QtWidgets.QMainWindow):
                 entry.clear()
 
             return
+
+        def seleccionar_ficheros(self):
+            filename,plot_options = QFileDialog.getOpenFileName()[0],[]
+            for pos,checkBox in enumerate(self.plot_tab.checkBoxsLayout.children()):
+                if checkBox.isChecked() == True:
+                    self.options.append(checkBox.text)
+                    plot_options.append(pos+1)
+                    checkBox.setChecked(False)
+                self.plot_selected_files.append([filename,plot_options])
+                self.plot_tab.texto.append("%s\n\t%s\n"%(filename,options))
+            return
+
     
 ############
 #   MAIN   #
