@@ -1,0 +1,93 @@
+# -*- coding: utf-8 -*-
+
+# Form implementation generated from reading ui file 'sshwindow.ui'
+#
+# Created by: PyQt5 UI code generator 5.6
+#
+# WARNING! All changes made in this file will be lost!
+
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+class Ui_SSHWindow(object):
+    def setupUi(self, SSHWindow):
+        SSHWindow.setObjectName("SSHWindow")
+        SSHWindow.resize(350, 300)
+        self.horizontalLayoutWidget = QtWidgets.QWidget(SSHWindow)
+        self.horizontalLayoutWidget.setGeometry(QtCore.QRect(10, 10, 321, 221))
+        self.horizontalLayoutWidget.setObjectName("horizontalLayoutWidget")
+        self.SSHLayout = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget)
+        self.SSHLayout.setContentsMargins(0, 0, 0, 0)
+        self.SSHLayout.setSpacing(0)
+        self.SSHLayout.setObjectName("SSHLayout")
+        self.SSHLabelsLayout = QtWidgets.QVBoxLayout()
+        self.SSHLabelsLayout.setContentsMargins(15, -1, 15, -1)
+        self.SSHLabelsLayout.setSpacing(0)
+        self.SSHLabelsLayout.setObjectName("SSHLabelsLayout")
+        self.User = QtWidgets.QLabel(self.horizontalLayoutWidget)
+        self.User.setObjectName("User")
+        self.SSHLabelsLayout.addWidget(self.User)
+        self.Password = QtWidgets.QLabel(self.horizontalLayoutWidget)
+        self.Password.setObjectName("Password")
+        self.SSHLabelsLayout.addWidget(self.Password)
+        self.Address = QtWidgets.QLabel(self.horizontalLayoutWidget)
+        self.Address.setObjectName("Address")
+        self.SSHLabelsLayout.addWidget(self.Address)
+        self.Port = QtWidgets.QLabel(self.horizontalLayoutWidget)
+        self.Port.setObjectName("Port")
+        self.SSHLabelsLayout.addWidget(self.Port)
+        self.Path_remote = QtWidgets.QLabel(self.horizontalLayoutWidget)
+        self.Path_remote.setObjectName("Path_remote")
+        self.SSHLabelsLayout.addWidget(self.Path_remote)
+        self.SSHLayout.addLayout(self.SSHLabelsLayout)
+        self.SSHEntriesLayout = QtWidgets.QVBoxLayout()
+        self.SSHEntriesLayout.setSpacing(0)
+        self.SSHEntriesLayout.setObjectName("SSHEntriesLayout")
+        self.User_Edit = QtWidgets.QLineEdit(self.horizontalLayoutWidget)
+        self.User_Edit.setObjectName("User_Edit")
+        self.SSHEntriesLayout.addWidget(self.User_Edit)
+        self.Password_Edit = QtWidgets.QLineEdit(self.horizontalLayoutWidget)
+        self.Password_Edit.setEchoMode(QtWidgets.QLineEdit.Password)
+        self.Password_Edit.setObjectName("Password_Edit")
+        self.SSHEntriesLayout.addWidget(self.Password_Edit)
+        self.Address_Edit = QtWidgets.QLineEdit(self.horizontalLayoutWidget)
+        self.Address_Edit.setObjectName("Address_Edit")
+        self.SSHEntriesLayout.addWidget(self.Address_Edit)
+        self.Port_Edit = QtWidgets.QLineEdit(self.horizontalLayoutWidget)
+        self.Port_Edit.setObjectName("Port_Edit")
+        self.SSHEntriesLayout.addWidget(self.Port_Edit)
+        self.Path_remote_Edit = QtWidgets.QLineEdit(self.horizontalLayoutWidget)
+        self.Path_remote_Edit.setObjectName("Path_remote_Edit")
+        self.SSHEntriesLayout.addWidget(self.Path_remote_Edit)
+        self.SSHLayout.addLayout(self.SSHEntriesLayout)
+        self.horizontalLayoutWidget_2 = QtWidgets.QWidget(SSHWindow)
+        self.horizontalLayoutWidget_2.setGeometry(QtCore.QRect(10, 240, 321, 51))
+        self.horizontalLayoutWidget_2.setObjectName("horizontalLayoutWidget_2")
+        self.ButtonsLayout = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget_2)
+        self.ButtonsLayout.setContentsMargins(10, 0, 10, 0)
+        self.ButtonsLayout.setSpacing(6)
+        self.ButtonsLayout.setObjectName("ButtonsLayout")
+        self.OKButton = QtWidgets.QPushButton(self.horizontalLayoutWidget_2)
+        self.OKButton.setObjectName("OKButton")
+        self.ButtonsLayout.addWidget(self.OKButton)
+        self.ResetButton = QtWidgets.QPushButton(self.horizontalLayoutWidget_2)
+        self.ResetButton.setObjectName("ResetButton")
+        self.ButtonsLayout.addWidget(self.ResetButton)
+        self.CheckButton = QtWidgets.QPushButton(self.horizontalLayoutWidget_2)
+        self.CheckButton.setObjectName("CheckButton")
+        self.ButtonsLayout.addWidget(self.CheckButton)
+
+        self.retranslateUi(SSHWindow)
+        QtCore.QMetaObject.connectSlotsByName(SSHWindow)
+
+    def retranslateUi(self, SSHWindow):
+        _translate = QtCore.QCoreApplication.translate
+        SSHWindow.setWindowTitle(_translate("SSHWindow", "Dialog"))
+        self.User.setText(_translate("SSHWindow", "User"))
+        self.Password.setText(_translate("SSHWindow", "Password"))
+        self.Address.setText(_translate("SSHWindow", "Address"))
+        self.Port.setText(_translate("SSHWindow", "Port"))
+        self.Path_remote.setText(_translate("SSHWindow", "Path remote"))
+        self.OKButton.setText(_translate("SSHWindow", "OK"))
+        self.ResetButton.setText(_translate("SSHWindow", "Reset"))
+        self.CheckButton.setText(_translate("SSHWindow", "Check Connection"))
+
