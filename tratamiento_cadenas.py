@@ -173,50 +173,67 @@ def leer_fichero(path):
 def leer_fichero_configuracion(path):
 
     lst_keywords,lst_values = leer_fichero(path)
-    dict,mod,keyword_mod = {},int(lst_values.pop(0))-1,lst_keywords.pop(0)
-    dict[keyword_mod[:2]+keyword_mod[-2:]] = mod
+    mod,keyword_mod = int(lst_values.pop(0))-1,lst_keywords.pop(0)
+    #dict[keyword_mod[:2]+keyword_mod[-2:]] = mod
     keywords_modulation = list(set(experiment_keywords[0]+experiment_keywords[mod]))
 
     ### CARGO VALORES POR DEFECTO ###
-    dict[SVALPOS] = 'P'
-    dict[SSENTYPE] = 3
-    dict[SRDTIME] = 0.1
-    dict[SELECPORTS] = ['P8_10','P8_12','P8_14','P8_16']
+    #dict[SVALPOS] = 'P'
+    #dict[SSENTYPE] = 3
+    #dict[SRDTIME] = 0.1
+    #dict[SELECPORTS] = ['P8_10','P8_12','P8_14','P8_16']
 
-    for keyword,val_keyword in zip(lst_keywords,lst_values):
-        if keyword not in platform_keywords and keyword not in keywords_modulation:
-            print (lista_errores[2]%(keyword))
-            return -1
-        elif keyword == 'martinelli_execution_mode' or keyword == 'martinelli_temperature_mode': 
-                dict[keyword[11:13]+keyword[-8:-6]] = val_keyword
-        else:
-            dict[keyword[:2]+keyword[-2:]] = val_keyword
+    #for keyword,val_keyword in zip(lst_keywords,lst_values):
+    #    if keyword not in platform_keywords and keyword not in keywords_modulation:
+    #        print (lista_errores[2]%(keyword))
+    #        return -1
+    #    elif keyword == 'martinelli_execution_mode' or keyword == 'martinelli_temperature_mode': 
+    #            dict[keyword[11:13]+keyword[-8:-6]] = val_keyword
+    #    else:
+    #        dict[keyword[:2]+keyword[-2:]] = val_keyword
+
+    ### CARGO VALORES POR DEFECTO ###
+    for label,value in zip([SVALPOS,SSENTYPE,SRDTIME,SELECPORTS],['P',3,0.1,['P8_10','P8_12','P8_14','P8_16']]):
+        if label not in lst_keywords:
+            lst_keywords.append(label)
+            lst_values.append(value)
 
     rest_keywords_modulation = list(set(experiment_keywords[0]+experiment_keywords[mod])-set(lst_keywords))
     for elem in rest_keywords_modulation:
-        dict[elem[:2]+elem[-2:]] = '0*'
+        lst_keywords.append(label)
+        lst_values.append(value)
+        #dict[elem[:2]+elem[-2:]] = '0*'
 
     rest_keywords_platform = list(set(platform_keywords)-set(lst_keywords)-set([VALPOS,SENTYPE,RDTIME,ELECPORTS]))
     for elem in rest_keywords_platform:
-        dict[elem[:2]+elem[-2:]] = ''
+        lst_keywords.append(label)
+        lst_values.append(value)
+        #dict[elem[:2]+elem[-2:]] = ''
 
     return dict
 
-def tratamiento_fichero_configuracion(dict):
+def tratamiento_fichero_configuracion(labels,entries):
 
-    rept,mod = int(dict.pop(SNEXPERIMENTOS)),int(dict.pop(SMODULACION))
-    versiones = tratamiento_expresion(dict.pop(SVEXPE),rept)
+    rept,mod = int(entries.pop(labels.index(SNEXPERIMENTOS))),int(entries.pop(labels.entries(SMODULACION)))
+    #rept,mod = int(dict.pop(SNEXPERIMENTOS)),int(dict.pop(SMODULACION))
+    versiones = tratamiento_expresion(entries.pop(labels.index(SVEXPE)),rept)
+    #versiones = tratamiento_expresion(dict.pop(SVEXPE),rept)
+
+    labels.pop(labels.index(SNEXPERIMENTOS))
+    labels.pop(labels.index(SMODULACION))
+    labels.pop(labels.index(SVEXPE))
 
     # Guardamos los datos en el diccionario, los guardo todos primero, porque puede haber datos necesarios para tratar que reciba al final
-    for key,value in dict.items():
-        #print(key,value)
+    for key,value in zip(labels,entries):
+        if key not in conf_values and key not in values[0] and key not in values[mod]:
+            print (lista_errores[2]%(key))
+            return ERR
         if key in conf_values:
-            dict[key] = tratamiento_plataforma(key,value,mod)
+            entries[labels.index(key)] = tratamiento_plataforma(key,value,mod)
         else:
-            dict[key] = tratamiento_experimento(key,value,versiones,rept)
+            entries[labels.index(key)] = tratamiento_experimento(key,value,versiones,rept)
             
     
-    #print("MUESTRAS",dict[SVECOPODR])
     # Creamos las series de odorantes que se van a analizar
     vecs_open_valves_ret,vector_open_valves,muestras,pos_valvulas,valvulas_seleccionadas,nombre_valvulas_abrir = [],dict[SVECOPVAL],dict.pop(SNMUESTRAS),dict[SVALPOS],dict[SELECPORTS],[]
     for version in versiones:
