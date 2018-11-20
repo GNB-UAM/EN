@@ -12,13 +12,13 @@ import pickle
 import numpy as np
 import itertools
 
-# MODULACION 1 -> PURO, MODULACION 2 -> REGRESION, MODULACION 3 -> MARTINELLI
+# MODULACION 1 -> PURO, MODULACION 2 -> REGRESION, MODULACION 3 -> MARTINELLI, MODULACION 4 -> PID
 
 ERR,OK = 0,1
 MODULACION,GRAFICAR,NEXPERIMENTOS = 'modulation','plot_mode','number_experiments'
-SUCCION,NMUESTRAS,SWESTIM,SINICIO,SBESTIM,NFILE,NFOLDER,SLEEP,VECOPVAL,VECOPODR,TEND,HTSENSOR,VEXPE,MMEXE,MMTEM,MTMIN,MTMAX = 'suction','aleatory_number_samples','duration_stimulation','initial_samples','time_between_stimulus','name_file','name_folder','sleep','vector_open_valves','vector_analy_odor','tendency','heat_sensor','experiment_version','martinelli_execution_mode','martinelli_temperature_mode','minimun_temperature_martinelli','maximun_temperature_martinelli'
-PIDPERIOD,MAXLIMITUPPERBOUND,MINLIMITUPPERBOUND,MAXLIMITLOWERBOUND,MINLIMITLOWERBOUND,ALPHA,MAXPKVAL,MINPKVAL = 'period','upper_limit_max','upper_limit_min','lower_limit_max','lower_limit_min','alpha','max_peak_value','min_peak_value'
-RDPORT,HTPORT,MTPORT,RSTCE,SDFOLDER,VALPOS,NMUETS,SLEEPM,SLEEPTYH,VCC,TEMPPORT,TYHSENSOR,ELECPORTS,SENTYPE,RDTIME = 'reading_port','heating_port','motor_pin','resistance','sd_folder','valve_position','number_samples','sleep_time','sleep_time_th','vcc','th_reading_port','sensor_tyh_type','electrovalves_port','type_sensor','reading_time'
+SUCCION,NMUESTRAS,SWESTIM,SINICIO,SBESTIM,NFILE,NFOLDER,SLEEP,VECOPVAL,VECOPODR,TEND,HTSENSOR,VEXPE,MMEXE,MMTEM,MTMIN,MTMAX = 'suction','random_number_samples','duration_stimulus','initial_samples','time_between_stimulus','name_file','name_folder','sleep','opening_valves','vector_analy_odor','tendency','sensor_temperature','experiment_version','execution_mode','temperature_mode','minimum_temperature','maximum_temperature'
+PIDPERIOD,MAXLIMITUPPERBOUND,MINLIMITUPPERBOUND,MAXLIMITLOWERBOUND,MINLIMITLOWERBOUND,ALPHA,MAXPKVAL,MINPKVAL = 'reference_signal_period','upper_maximum_limit','upper_minimum_limit','lower_maximum_limit','lower_minimum_limit','alpha_value','maximum_value','minimum_value'
+RDPORT,HTPORT,MTPORT,RSTCE,SDFOLDER,VALPOS,NMUETS,SLEEPM,SLEEPTYH,VCC,TEMPPORT,TYHSENSOR,ELECPORTS,SENTYPE,RDTIME = 'reading_tgs_port','heating_port','engines_pin','resistance','storage','valves_position','number_samples','frecuency_samples','frecuency_tyh_samples','vcc','reading_tyh_port','model_tyh_sensor','electrovalves_port','model_tgs_sensor','reading_time'
 ALL_TRANSITIONS,ALEATORY,USER_TRANSITIONS = 1,2,3
 
 # Power, ground and reset ports
@@ -29,58 +29,6 @@ PWMS = ['P8_13','P8_19','P9_14','P9_16','P9_21','P9_22','P9_42']
 experiment_keywords = [[MODULACION,NMUESTRAS,NEXPERIMENTOS,SUCCION,SWESTIM,SINICIO,SBESTIM,NFILE,NFOLDER,VECOPVAL,VEXPE,SLEEP],
     [TEND,HTSENSOR],[MMEXE,MMTEM,MTMIN,MTMAX],[PIDPERIOD,MAXLIMITUPPERBOUND,MINLIMITUPPERBOUND,MAXLIMITLOWERBOUND,MINLIMITLOWERBOUND,ALPHA,HTSENSOR,MAXPKVAL,MINPKVAL]]
 platform_keywords = [RDPORT,HTPORT,MTPORT,RSTCE,SDFOLDER,VALPOS,NMUETS,SLEEPM,SLEEPTYH,VCC,TEMPPORT,TYHSENSOR,ELECPORTS,SENTYPE,RDTIME]
-
-# VERSION CORTA
-SMODULACION,SGRAFICAR,SNEXPERIMENTOS = MODULACION[:2]+MODULACION[-2:],GRAFICAR[:2]+GRAFICAR[-2:],NEXPERIMENTOS[:2]+NEXPERIMENTOS[-2:]
-
-SSUCCION = SUCCION[:2]+SUCCION[-2:]
-SNMUESTRAS = NMUESTRAS[:2]+NMUESTRAS[-2:]
-SSWESTIM = SWESTIM[:2]+SWESTIM[-2:]
-SSINICIO = SINICIO[:2]+SINICIO[-2:]
-SSBESTIM = SBESTIM[:2]+SBESTIM[-2:]
-SNFILE = NFILE[:2]+NFILE[-2:]
-SNFOLDER = NFOLDER[:2]+NFOLDER[-2:]
-SSLEEP = SLEEP[:2]+SLEEP[-2:]
-SVECOPVAL = VECOPVAL[:2]+VECOPVAL[-2:]
-SVECOPODR = VECOPODR[:2]+VECOPODR[-2:]
-STEND = TEND[:2]+TEND[-2:]
-SHTSENSOR = HTSENSOR[:2]+HTSENSOR[-2:]
-SVEXPE = VEXPE[:2]+VEXPE[-2:]
-SMMEXE = MMEXE[11:13]+MMEXE[-8:-6] # Cojo una mas para evitar errores
-SMMTEM = MMTEM[11:13]+MMTEM[-8:-6] # Cojo una mas para evitar errores
-SMTMIN = MTMIN[:2]+MTMIN[-2:]
-SMTMAX = MTMAX[:2]+MTMAX[-2:]
-SPIDPERIOD = PIDPERIOD[:2]+PIDPERIOD[-2:]
-SMAXLIMITUPPERBOUND = MAXLIMITUPPERBOUND[:2]+MAXLIMITUPPERBOUND[-2:]
-SMINLIMITUPPERBOUND = MINLIMITUPPERBOUND[:2]+MINLIMITUPPERBOUND[-2:]
-SMAXLIMITLOWERBOUND = MAXLIMITLOWERBOUND[:2]+MAXLIMITLOWERBOUND[-2:]
-SMINLIMITLOWERBOUND = MINLIMITLOWERBOUND[:2]+MINLIMITLOWERBOUND[-2:]
-SALPHA = ALPHA[:2]+ALPHA[-2:]
-SMAXPKVAL = MAXPKVAL[:2] + MAXPKVAL[-2:]
-SMINPKVAL = MINPKVAL[:2] + MINPKVAL[-2:]
-
-SRDPORT = RDPORT[:2]+RDPORT[-2:]
-SHTPORT = HTPORT[:2]+HTPORT[-2:]
-SMTPORT = MTPORT[:2]+MTPORT[-2:]
-SRSTCE = RSTCE[:2]+RSTCE[-2:]
-SSDFOLDER = SDFOLDER[:2]+SDFOLDER[-2:]
-SVALPOS = VALPOS[:2]+VALPOS[-2:]
-SNMUETS = NMUETS[:2]+NMUETS[-2:]
-SSLEEPM = SLEEPM[:2]+SLEEPM[-2:]
-SSLEEPTYH = SLEEPTYH[:2]+SLEEPTYH[-2:]
-SVCC = VCC[:2]+VCC[-2:]
-STEMPPORT = TEMPPORT[:2]+TEMPPORT[-2:]
-STYHSENSOR = TYHSENSOR[:2]+TYHSENSOR[-2:]
-SELECPORTS = ELECPORTS[:2]+ELECPORTS[-2:]
-SSENTYPE = SENTYPE[:2]+SENTYPE[-2:]
-SRDTIME = RDTIME[:2]+RDTIME[-2:]
-
-values = [[SNEXPERIMENTOS,SSUCCION,SNMUESTRAS,SSWESTIM,SSINICIO,SSBESTIM,SNFILE,SNFOLDER,SSLEEP,SVECOPVAL,SVEXPE],
-    [STEND,SHTSENSOR],
-    [SMMEXE,SMMTEM,SMTMIN,SMTMAX],
-    [SPIDPERIOD,SMAXLIMITUPPERBOUND,SMINLIMITUPPERBOUND,SMAXLIMITLOWERBOUND,SMINLIMITLOWERBOUND,SALPHA,SHTSENSOR,SMAXPKVAL,SMINPKVAL]]
-
-conf_values = [SRDPORT,SHTPORT,SMTPORT,SRSTCE,SSDFOLDER,SVALPOS,SNMUETS,SSLEEPM,SSLEEPTYH,SVCC,STEMPPORT,STYHSENSOR,SELECPORTS,SSENTYPE,SRDTIME]
 
 lista_errores = ["El numero de elementos de la expresion: %s no coincide con el numero de experimentos introducidos",
         "La expresion %s esta mal formada","El identificador %s no existe","La version del experimento: %d no es correcta",
@@ -173,69 +121,50 @@ def leer_fichero(path):
 def leer_fichero_configuracion(path):
 
     lst_keywords,lst_values = leer_fichero(path)
-    mod,keyword_mod = int(lst_values.pop(0))-1,lst_keywords.pop(0)
-    #dict[keyword_mod[:2]+keyword_mod[-2:]] = mod
+    dict,mod,keyword_mod = {},int(lst_values.pop(0))-1,lst_keywords.pop(0)
+    dict[keyword_mod] = mod
     keywords_modulation = list(set(experiment_keywords[0]+experiment_keywords[mod]))
 
     ### CARGO VALORES POR DEFECTO ###
-    #dict[SVALPOS] = 'P'
-    #dict[SSENTYPE] = 3
-    #dict[SRDTIME] = 0.1
-    #dict[SELECPORTS] = ['P8_10','P8_12','P8_14','P8_16']
+    dict[VALPOS] = 'P'
+    dict[SENTYPE] = 3
+    dict[RDTIME] = 0.1
+    dict[SELECPORTS] = ['P8_10','P8_12','P8_14','P8_16']
 
-    #for keyword,val_keyword in zip(lst_keywords,lst_values):
-    #    if keyword not in platform_keywords and keyword not in keywords_modulation:
-    #        print (lista_errores[2]%(keyword))
-    #        return -1
-    #    elif keyword == 'martinelli_execution_mode' or keyword == 'martinelli_temperature_mode': 
-    #            dict[keyword[11:13]+keyword[-8:-6]] = val_keyword
-    #    else:
-    #        dict[keyword[:2]+keyword[-2:]] = val_keyword
-
-    ### CARGO VALORES POR DEFECTO ###
-    for label,value in zip([SVALPOS,SSENTYPE,SRDTIME,SELECPORTS],['P',3,0.1,['P8_10','P8_12','P8_14','P8_16']]):
-        if label not in lst_keywords:
-            lst_keywords.append(label)
-            lst_values.append(value)
+    for keyword,val_keyword in zip(lst_keywords,lst_values):
+        if keyword not in platform_keywords and keyword not in keywords_modulation:
+            print (lista_errores[2]%(keyword))
+            return -1
+        else:
+            dict[keyword] = val_keyword
 
     rest_keywords_modulation = list(set(experiment_keywords[0]+experiment_keywords[mod])-set(lst_keywords))
     for elem in rest_keywords_modulation:
-        lst_keywords.append(label)
-        lst_values.append(value)
-        #dict[elem[:2]+elem[-2:]] = '0*'
+        dict[elem] = '0*'
 
     rest_keywords_platform = list(set(platform_keywords)-set(lst_keywords)-set([VALPOS,SENTYPE,RDTIME,ELECPORTS]))
     for elem in rest_keywords_platform:
-        lst_keywords.append(label)
-        lst_values.append(value)
-        #dict[elem[:2]+elem[-2:]] = ''
+        dict[elem] = ''
 
     return dict
 
-def tratamiento_fichero_configuracion(labels,entries):
+def tratamiento_fichero_configuracion(dict):
 
-    rept,mod = int(entries.pop(labels.index(SNEXPERIMENTOS))),int(entries.pop(labels.entries(SMODULACION)))
-    #rept,mod = int(dict.pop(SNEXPERIMENTOS)),int(dict.pop(SMODULACION))
-    versiones = tratamiento_expresion(entries.pop(labels.index(SVEXPE)),rept)
-    #versiones = tratamiento_expresion(dict.pop(SVEXPE),rept)
-
-    labels.pop(labels.index(SNEXPERIMENTOS))
-    labels.pop(labels.index(SMODULACION))
-    labels.pop(labels.index(SVEXPE))
+    rept,mod = int(dict.pop(NEXPERIMENTOS)),int(dict.pop(MODULACION))
+    versiones = tratamiento_expresion(dict.pop(VEXPE),rept)
 
     # Guardamos los datos en el diccionario, los guardo todos primero, porque puede haber datos necesarios para tratar que reciba al final
-    for key,value in zip(labels,entries):
-        if key not in conf_values and key not in values[0] and key not in values[mod]:
-            print (lista_errores[2]%(key))
-            return ERR
+    for key,value in dict.items():
+        #print(key,value)
         if key in conf_values:
-            entries[labels.index(key)] = tratamiento_plataforma(key,value,mod)
+            dict[key] = tratamiento_plataforma(key,value,mod)
         else:
-            entries[labels.index(key)] = tratamiento_experimento(key,value,versiones,rept)
+            dict[key] = tratamiento_experimento(key,value,versiones,rept)
             
     
+    #print("MUESTRAS",dict[SVECOPODR])
     # Creamos las series de odorantes que se van a analizar
-    vecs_open_valves_ret,vector_open_valves,muestras,pos_valvulas,valvulas_seleccionadas,nombre_valvulas_abrir = [],dict[SVECOPVAL],dict.pop(SNMUESTRAS),dict[SVALPOS],dict[SELECPORTS],[]
+    vecs_open_valves_ret,vector_open_valves,muestras,pos_valvulas,valvulas_seleccionadas,nombre_valvulas_abrir = [],dict[VECOPVAL],dict.pop(NMUESTRAS),dict[VALPOS],dict[SELECPORTS],[]
     for version in versiones:
         if version == ALL_TRANSITIONS:
             valvulas_abrir = todas_transiciones(valvulas_seleccionadas)
@@ -251,16 +180,16 @@ def tratamiento_fichero_configuracion(labels,entries):
             if pos_valvulas == 'P' else [list(set(range(1,len(valvulas_seleccionadas)+1))-set(lst)) for lst in valvulas_abrir])
         nombre_valvulas_abrir.append(valvulas_abrir)
 
-    dict[SVECOPVAL] = vecs_open_valves_ret
-    dict[SVECOPODR] = nombre_valvulas_abrir
+    dict[VECOPVAL] = vecs_open_valves_ret
+    dict[VECOPODR] = nombre_valvulas_abrir
 
     return mod,dict
 
 def tratamiento_experimento(key,value,versiones,repeticiones):
 
-    if key == SNMUESTRAS:
+    if key == NMUESTRAS:
         expr = tratamiento_expresion(value,versiones.count(2))
-    elif key == SVECOPVAL:
+    elif key == VECOPVAL:
         expr = tratamiento_expresion(value,versiones.count(3),True)
     else:
         expr = tratamiento_expresion(value,repeticiones)
@@ -269,7 +198,7 @@ def tratamiento_experimento(key,value,versiones,repeticiones):
 
 def tratamiento_plataforma(key,value,mod):
     
-    if key == SRDPORT:
+    if key == RDPORT:
         if value not in ADCS and mod != 3:
             print (lista_errores[4])
             return exit(1)
@@ -278,7 +207,7 @@ def tratamiento_plataforma(key,value,mod):
             return exit(1)
         else:
             return value
-    elif (key == SHTPORT or key == SMTPORT) and value not in PWMS:
+    elif (key == HTPORT or key == MTPORT) and value not in PWMS:
         print (lista_errores[6])
         return exit(1)
     elif key == SELECPORTS:
@@ -291,16 +220,13 @@ def tratamiento_plataforma(key,value,mod):
 def crear_transiciones(switch,total_valvulas):
     """
     Crea transiciones entre gases
-
     Creamos transiciones entre gases, aleatoriamente, de forma que nunca se repita la misma secuencia de apertura.
     Que no entre dos veces al sensor el mismo gas.
-
     Parámetros:
     switch -- numero de gases que van a entrar al sensor
     
     Retorno:
     devolver -- array con los gases que van a entrar al sensor
-
     """
 
     return [[rn.randint(1,len(total_valvulas))] for i in range(switch)]
@@ -308,12 +234,10 @@ def crear_transiciones(switch,total_valvulas):
 def todas_transiciones(set_total_vales):
     """
     Crea transiciones entre gases
-
     Creamos transiciones entre gases, sin poner aire entre los gases
     
     Retorno:
     devolver -- array con los gases que van a entrar al sensor
-
     """
     # Movida rara, dejo así, aunque se podrá mejorar
     n_sensor = len(set_total_vales)
@@ -373,4 +297,4 @@ def leer_ficheros_graphicPyHuele(path_experiment_config,path_platform_config):
                 break
         fil.close()
 
-    return mod,experiment_data_dict,platform_data_dict
+return mod,experiment_data_dict,platform_data_dict
