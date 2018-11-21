@@ -62,6 +62,16 @@ def main():
         os.kill(pid,signal.SIGUSR1)
         f.close()
         exit()
+
+    if sys.argv[1] == "--remote":
+        #Abrimos el archivo PICKLE de la interfaz. NUNCA ABRIR UN ARCHIVO PICKLE DESCONOCIDO. RIESGO PARA EL SISTEMA.
+        fileObject = open("pickle_dic.pkl","rb")
+        mod,experiment_data_dict = pickle.load(fileObject)
+        fileObject.close()
+        os.remove("pickle_dic.pkl")
+        modul = tipos_modulacion[mod](experiment_data_dict)
+        path = modul.iniciar_captura_datos()
+        return #IMPORTANTE ESTE RETURN, SINO CAPTURARIA DE NUEVO
     
     path_config_experiment = sys.argv[1]
     

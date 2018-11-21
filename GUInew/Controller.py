@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import QFileDialog,QMessageBox
 from PyQt5.QtCore import *
 import os
 import paramiko
+import pickle
 
 class Controller(QtWidgets.QMainWindow):
         
@@ -42,8 +43,7 @@ class Controller(QtWidgets.QMainWindow):
                 self.conexion_tab.CheckButton.clicked.connect(self.SSH_comprobar_conexion)
                 self.conexion_tab.ResetButton.clicked.connect(self.SSH_resetear_parametros_conexion)
                 self.plot_tab.SFichero.clicked.connect(self.seleccionar_fichero_plot)
-                self.plot_tab.AnadirButton.clicked.connect(self.seleccionar_fichero_plot_SSH)
-                self.ssh_user,self.ssh_password,self.ssh_address,self.ssh_port,self.ssh_path = None,None,None,None,None
+                self.ssh_user,self.ssh_password,self.ssh_address,self.ssh_port,self.ssh_path = None,None,None,None,''
                 self.MAXSUCCION = 100
                 self.MINSUCCION = 30
                 self.MAXHEAT = 100
@@ -72,14 +72,18 @@ class Controller(QtWidgets.QMainWindow):
                         exit(1)
 
         def start(self):
+            if self.ssh_address == None or self.ssh_port == None or self.ssh_user == None or self.ssh_password == None:
+                QMessageBox.critical(self,"Error","Introduzca los datos para la conexion ssh.")
+                return
+
             dict = {}
             for label,entry in zip(self.ui.PuroLabelsLayout.children(),self.ui.PuroEntriesLayout.children()):
-                dict[label.objectName()] = entry.objectName()
+                dict[label.objectName()] = entry.text()
 
             for widget in self.modulations:
                 if widget.isVisible() == True:
                     for label,entry in zip(widget.children()[1:int((len(widget.children())+1)/2)],widget.children()[int((len(widget.children())+1)/2):]):
-                        dict[label.objectName()] = entry.objectName()
+                        dict[label.objectName()] = entry.text()
 
             try:
                 mod,dict = tratamiento_fichero_configuracion(dict)
@@ -88,8 +92,8 @@ class Controller(QtWidgets.QMainWindow):
                 return
 
             # Realizo un Pickle -> IMPORTANTE: CUIDADO CON LOS PICKLES, NO ABRIR NINGUNO DESCONOCIDO. RIESGO PARA LA SEGURIDAD DEL ORDENADOR
-            fileObject = open("pickle_dic.pkl","w")
-            pickle.dump([mod,dict],fileObject)
+            fileObject = open("pickle_dic.pkl","wb")
+            pickle.dump([mod,dict],fileObject,protocol=pickle.HIGHEST_PROTOCOL)
             fileObject.close()
 
             if self.ui.SSHcheckBox.isChecked() == False:
@@ -120,20 +124,12 @@ class Controller(QtWidgets.QMainWindow):
             self.plot_tab.SSHFicheroEdit.clear()
 
         def representar_datos(self):
-            self.limpiar_opciones_plot()
+            self.limpiar_opciones_plot(True)
             self.ax.clear()
-            for c,list in enumerate(self.files):
-                if len(files) == 3:
-                    file,options = self.obtener_fichero_plot_SSH(list)
-                else:
-                    file,options = list
-
+            for c,file,options in enumerate(self.files):
                 data = np.genfromtxt(file,skipe_header=1,delimiter=' ').T
                 for c in options: ax.plot(data[c],color=c)
                 
-        def obtener_fichero_plot_SSH(self,filename):
-
-
         def habilitar_SSH(self):
             self.ui.SSHButton.setEnabled(True) if self.ui.SSHcheckBox.isChecked() == True else self.SSHButton.setEnabled(False)
             return
@@ -145,15 +141,6 @@ class Controller(QtWidgets.QMainWindow):
         def seleccionar_fichero_plot(self):
 
             filename = QFileDialog.getOpenFileName()[0]
-            self.seleccionar_opciones_plot(filename)
-
-        def seleccionar_fichero_plot_SSH(self):
-
-            filename = self.plot_tab.SSHFicheroEdit.text()
-            self.seleccionar_opciones_plot()
-
-        def seleccionar_opciones_plot(self,filename):
-
             columns,name = [],[]
             for pos,checkBox in enumerate(self.plot_tab.checkBoxsLayout.children()):
                 if checkBox.isChecked() == True:
@@ -167,7 +154,7 @@ class Controller(QtWidgets.QMainWindow):
             self.plot_tab.Texto.append("%s\n\t%s\n"%(filename,name))
             self.files_plot.append([filename,columns])
             limpiar_opciones_plot(False)
-            return
+            return           
 
         def conexion(self):
             self.window.show()
@@ -186,6 +173,9 @@ class Controller(QtWidgets.QMainWindow):
             return
 
         def SSH_comprobar_conexion(self):
+            if self.ssh_address == None:
+                QMessageBox.warning(self,"Conexion Erronea","Debe introducir una direccion.")
+                return
             response = os.system("ping -c 1 "+self.ssh_address)
             if response == 0:
                 QMessageBox.information(self,"Conexion Correcta","La conexión es correcta")
@@ -213,42 +203,6 @@ class Controller(QtWidgets.QMainWindow):
                 widgets.hide()
         
             return
-
-        def obtener_informacion_widgets(self):
-
-            for widget_count in range(1,self.ui.ExperimentLayout.count()):
-                if widget_count%2 == 0:
-                    labels.append(self.ui.ExperimentLayout.itemAt(i).widget().objectName())
-                else:
-                    entries.append(self.ui.ExperimentLayout.itemAt(i).widget().text())
-                        
-            selected = self.ui.Modulation.currentText()
-            if selected == "Regresion":
-                for widget_count in range(1,self.ui.ExperimentLayout.count()):
-                    if widget_count%2 == 0:
-                        labels.append(self.ui.ExperimentLayout.itemAt(i).widget().objectName())
-                    else:
-                        entries.append(self.ui.ExperimentLayout.itemAt(i).widget().text())
-            elif selected == "Martinelli":
-                for widget_count in range(1,self.ui.ExperimentLayout.count()):
-                    if widget_count%2 == 0:
-                        labels.append(self.ui.ExperimentLayout.itemAt(i).widget().objectName())
-                    else:
-                        entries.append(self.ui.ExperimentLayout.itemAt(i).widget().text())
-            elif selected == "PID":
-                for widget_count in range(1,self.ui.ExperimentLayout.count()):
-                    if widget_count%2 == 0:
-                        labels.append(self.ui.ExperimentLayout.itemAt(i).widget().objectName())
-                    else:
-                        entries.append(self.ui.ExperimentLayout.itemAt(i).widget().text())
-            
-        def iniciar_experimento(self):
-                
-                diccionario = {}
-                for i in range(ini,fin):
-                        diccionario[self.labels[i][:2]+self.labels[i][-2:]] = self.lines[i].text()
-                
-                tc.tratamiento_fichero_configuracion(diccionario)
 
         def guardar_datos(self):
             filename = QFileDialog.getOpenFileName()

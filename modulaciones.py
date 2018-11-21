@@ -36,29 +36,29 @@ class Modulacion(object):
         super().__init__(**kwargs) #Comprobar que no falle por esto
         Modulacion.daemonizar()
         
-        self.succiones = config_experiment[tc.SSUCCION]
-        self.switchs = config_experiment[tc.SSWESTIM]
-        self.samples_ini = config_experiment[tc.SSINICIO]
-        self.cte = config_experiment[tc.SSBESTIM]
-        self.name_files = config_experiment[tc.SNFILE]
-        self.name_folders = config_experiment[tc.SNFOLDER]
-        self.vecs_open_valves = config_experiment[tc.SVECOPVAL]
-        self.vecs_anal_odort = config_experiment[tc.SVECOPODR]
-        self.sleeps = config_experiment[tc.SSLEEP]
+        self.succiones = config_experiment[tc.SUCCION]
+        self.switchs = config_experiment[tc.SWESTIM]
+        self.samples_ini = config_experiment[tc.SINICIO]
+        self.cte = config_experiment[tc.SBESTIM]
+        self.name_files = config_experiment[tc.NFILE]
+        self.name_folders = config_experiment[tc.NFOLDER]
+        self.vecs_open_valves = config_experiment[tc.VECOPVAL]
+        self.vecs_anal_odort = config_experiment[tc.VECOPODR]
+        self.sleeps = config_experiment[tc.SLEEP]
         self.time_mark = datetime.now()
         self.f,self.g,self.h,self.thiread = None,None,None,None
         self.air_loop = False
-        Modulacion.motorPin = config_experiment[tc.SMTPORT] if config_experiment[tc.SMTPORT] != '' else 'P9_21'
-        Modulacion.NM = int(config_experiment[tc.SNMUETS]) if config_experiment[tc.SNMUETS] != '' else 10
-        Modulacion.T = float(config_experiment[tc.SRDTIME]) if config_experiment[tc.SRDTIME] != '' else 0.1
-        Modulacion.SLEEP = int(config_experiment[tc.SSLEEPM]) if config_experiment[tc.SSLEEPM] != '' else 1
-        Modulacion.SLEEP_tyh = int(config_experiment[tc.SSLEEPTYH]) if config_experiment[tc.SSLEEPTYH] != '' else 59
-        Modulacion.Vcc = int(config_experiment[tc.SVCC]) if config_experiment[tc.SVCC] != '' else 5
-        Modulacion.Temp22 = config_experiment[tc.STEMPPORT] if config_experiment[tc.STEMPPORT] != '' else 'P8_11'
-        Modulacion.electrovalvulas = config_experiment[tc.SELECPORTS] if config_experiment[tc.SELECPORTS] != [''] else ['P8_10','P8_12','P8_14','P8_16']
-        Modulacion.sensorTemp22 = Modulacion.TyH_sensor[config_experiment[tc.SSENTYPE]]
+        Modulacion.motorPin = config_experiment[tc.MTPORT] if config_experiment[tc.MTPORT] != '' else 'P9_21'
+        Modulacion.NM = int(config_experiment[tc.NMUETS]) if config_experiment[tc.NMUETS] != '' else 10
+        Modulacion.T = float(config_experiment[tc.RDTIME]) if config_experiment[tc.RDTIME] != '' else 0.1
+        Modulacion.SLEEP = int(config_experiment[tc.SLEEPM]) if config_experiment[tc.SLEEPM] != '' else 1
+        Modulacion.SLEEP_tyh = int(config_experiment[tc.SLEEPTYH]) if config_experiment[tc.SLEEPTYH] != '' else 59
+        Modulacion.Vcc = int(config_experiment[tc.VCC]) if config_experiment[tc.VCC] != '' else 5
+        Modulacion.Temp22 = config_experiment[tc.TEMPPORT] if config_experiment[tc.TEMPPORT] != '' else 'P8_11'
+        Modulacion.electrovalvulas = config_experiment[tc.ELECPORTS] if config_experiment[tc.ELECPORTS] != [''] else ['P8_10','P8_12','P8_14','P8_16']
+        Modulacion.sensorTemp22 = Modulacion.TyH_sensor[config_experiment[tc.SENTYPE]]
         Modulacion.tsub = Modulacion.T / Modulacion.NM
-        Modulacion.electrpos = config_experiment[tc.SVALPOS]
+        Modulacion.electrpos = config_experiment[tc.VALPOS]
         Modulacion.capturas_iniciales = [4] if Modulacion.electrpos != 'R' else [1,2,3]
         #Modulacion.queue = qu.Queue() # Creo la cola de mensaje global
         Modulacion.event_TyH = Event() # Evento para sincronizar los hilos de captura y de escritura
@@ -309,10 +309,10 @@ class Puro(Modulacion):
 
     def __init__(self,config_experiment,**kwargs):
         super().__init__(config_experiment,config_platform,Puro.strings,**kwargs)
-        Puro.Rl_2600 = int(config_experiment[tc.SRSTCE]) if config_experiment[tc.SRSTCE] != '' else 440
-        Puro.sensorPin2600 = config_experiment[tc.SRDPORT] if config_experiment[tc.SRDPORT] != '' else 'P9_38'
-        Puro.heatPin2600 = config_experiment[tc.SHTPORT] if config_experiment[tc.SHTPORT] != '' else ''
-        Puro.path = config_experiment[tc.SSDFOLDER] if config_experiment[tc.SSDFOLDER] != '' else 'CAPTURAS/PURO'
+        Puro.Rl_2600 = int(config_experiment[tc.RSTCE]) if config_experiment[tc.RSTCE] != '' else 440
+        Puro.sensorPin2600 = config_experiment[tc.RDPORT] if config_experiment[tc.RDPORT] != '' else 'P9_38'
+        Puro.heatPin2600 = config_experiment[tc.HTPORT] if config_experiment[tc.HTPORT] != '' else ''
+        Puro.path = config_experiment[tc.SDFOLDER] if config_experiment[tc.SDFOLDER] != '' else 'CAPTURAS/PURO'
         self.muestras = 0
 
     def valor_sensor(self,string,gas):
@@ -428,15 +428,15 @@ class Regresion(Modulacion):
 
     def __init__(self,config_experiment,**kwargs):
         super().__init__(config_experiment,**kwargs)
-        self.tendencia = config_experiment[tc.STEND]
-        self.heat = config_experiment[tc.SHTSENSOR]
+        self.tendencia = config_experiment[tc.TEND]
+        self.heat = config_experiment[tc.HTSENSOR]
         self.x=[]
         self.concentTGS2600=[]
         self.muestras = 0
-        Regresion.Rl_2600 = int(config_experiment[tc.SRSTCE]) if config_experiment[tc.SRSTCE] != '' else 440
-        Regresion.sensorPin2600 = config_experiment[tc.SRDPORT] if config_experiment[tc.SRDPORT] != '' else 'P9_40'
-        Regresion.heatPin2600 = config_experiment[tc.SHTPORT] if config_experiment[tc.SHTPORT] != '' else 'P9_22'
-        Regresion.path = config_experiment[tc.SSDFOLDER] if config_experiment[tc.SSDFOLDER] != '' else 'CAPTURAS/REGRESION'
+        Regresion.Rl_2600 = int(config_experiment[tc.RSTCE]) if config_experiment[tc.RSTCE] != '' else 440
+        Regresion.sensorPin2600 = config_experiment[tc.RDPORT] if config_experiment[tc.RDPORT] != '' else 'P9_40'
+        Regresion.heatPin2600 = config_experiment[tc.HTPORT] if config_experiment[tc.HTPORT] != '' else 'P9_22'
+        Regresion.path = config_experiment[tc.SDFOLDER] if config_experiment[tc.SDFOLDER] != '' else 'CAPTURAS/REGRESION'
             
     def valor_sensor(self,temperature_TGS2600,string,opcion,gas,samplesinicio,tendencia):
         """
@@ -586,27 +586,27 @@ class MPID(Modulacion): #ModulationPID
 
     def __init__(self,config_experiment,**kwargs):
         super().__init__(config_experiment,**kwargs)
-        self.periods = config_experiment[tc.SPIDPERIOD]
-        self.heat = config_experiment[tc.SHTSENSOR]
-        self.Kp = list(np.array(config_experiment[tc.SALPHA])*0.6)
+        self.periods = config_experiment[tc.PIDPERIOD]
+        self.heat = config_experiment[tc.HTSENSOR]
+        self.Kp = list(np.array(config_experiment[tc.ALPHA])*0.6)
         self.Kd = list(np.array(self.periods)*0.125)
         self.Ki = list(np.array(self.periods)*0.5)
-        self.temperature_Max_Upper_Bound = config_experiment[tc.SMAXLIMITUPPERBOUND]
-        self.temperature_Min_Upper_Bound = config_experiment[tc.SMINLIMITUPPERBOUND]
-        self.temperature_Max_Lower_Bound = config_experiment[tc.SMAXLIMITLOWERBOUND]
-        self.temperature_Min_Lower_Bound = config_experiment[tc.SMINLIMITLOWERBOUND]
-        self.max_peak_value = config_experiment[tc.SMAXPKVAL]
-        self.min_peak_value = config_experiment[tc.SMINPKVAL]
+        self.temperature_Max_Upper_Bound = config_experiment[tc.MAXLIMITUPPERBOUND]
+        self.temperature_Min_Upper_Bound = config_experiment[tc.MINLIMITUPPERBOUND]
+        self.temperature_Max_Lower_Bound = config_experiment[tc.MAXLIMITLOWERBOUND]
+        self.temperature_Min_Lower_Bound = config_experiment[tc.MINLIMITLOWERBOUND]
+        self.max_peak_value = config_experiment[tc.MAXPKVAL]
+        self.min_peak_value = config_experiment[tc.MINPKVAL]
         self.target = None # Target que hay que seguir
         self.max_value,self.min_value = 0,0 # Valores máximos y mínimos capturados por el sensor
         self.max_PID_temp,self.min_PID_temp = 0,0 # Valores máximos y mínimos de la temperatura del sensor
         self.errorControl = 0.05
         self.muestras = 0
 
-        MPID.Rl_2600 = int(config_experiment[tc.SRSTCE]) if config_experiment[tc.SRSTCE] != '' else 440
-        MPID.sensorPin2600 = config_experiment[tc.SRDPORT] if config_experiment[tc.SRDPORT] != '' else 'P9_40'
-        MPID.heatPin2600 = config_experiment[tc.SHTPORT] if config_experiment[tc.SHTPORT] != '' else 'P9_22'
-        MPID.path = config_experiment[tc.SSDFOLDER] if config_experiment[tc.SSDFOLDER] != '' else 'CAPTURAS/MPID'
+        MPID.Rl_2600 = int(config_experiment[tc.RSTCE]) if config_experiment[tc.RSTCE] != '' else 440
+        MPID.sensorPin2600 = config_experiment[tc.RDPORT] if config_experiment[tc.RDPORT] != '' else 'P9_40'
+        MPID.heatPin2600 = config_experiment[tc.HTPORT] if config_experiment[tc.HTPORT] != '' else 'P9_22'
+        MPID.path = config_experiment[tc.SDFOLDER] if config_experiment[tc.SDFOLDER] != '' else 'CAPTURAS/MPID'
 
         self.lastError,self.addError,self.temp = 0,0,0
 

@@ -129,7 +129,7 @@ def leer_fichero_configuracion(path):
     dict[VALPOS] = 'P'
     dict[SENTYPE] = 3
     dict[RDTIME] = 0.1
-    dict[SELECPORTS] = ['P8_10','P8_12','P8_14','P8_16']
+    dict[ELECPORTS] = ['P8_10','P8_12','P8_14','P8_16']
 
     for keyword,val_keyword in zip(lst_keywords,lst_values):
         if keyword not in platform_keywords and keyword not in keywords_modulation:
@@ -164,7 +164,7 @@ def tratamiento_fichero_configuracion(dict):
     
     #print("MUESTRAS",dict[SVECOPODR])
     # Creamos las series de odorantes que se van a analizar
-    vecs_open_valves_ret,vector_open_valves,muestras,pos_valvulas,valvulas_seleccionadas,nombre_valvulas_abrir = [],dict[VECOPVAL],dict.pop(NMUESTRAS),dict[VALPOS],dict[SELECPORTS],[]
+    vecs_open_valves_ret,vector_open_valves,muestras,pos_valvulas,valvulas_seleccionadas,nombre_valvulas_abrir = [],dict[VECOPVAL],dict.pop(NMUESTRAS),dict[VALPOS],dict[ELECPORTS],[]
     for version in versiones:
         if version == ALL_TRANSITIONS:
             valvulas_abrir = todas_transiciones(valvulas_seleccionadas)
@@ -210,7 +210,7 @@ def tratamiento_plataforma(key,value,mod):
     elif (key == HTPORT or key == MTPORT) and value not in PWMS:
         print (lista_errores[6])
         return exit(1)
-    elif key == SELECPORTS:
+    elif key == ELECPORTS:
         expr = value.split(",") if isinstance(value,list) == False else value
     else:   
         expr = value
@@ -297,4 +297,4 @@ def leer_ficheros_graphicPyHuele(path_experiment_config,path_platform_config):
                 break
         fil.close()
 
-return mod,experiment_data_dict,platform_data_dict
+    return mod,experiment_data_dict,platform_data_dict
