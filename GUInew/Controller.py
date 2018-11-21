@@ -3,12 +3,14 @@
 #import new_GUI as NG
 from new_GUI import *
 from new_GUI_tab import *
+from new_GUI_tab_2 import *
 import sys
 from PyQt5.QtWidgets import QFileDialog,QMessageBox
 from PyQt5.QtCore import *
 import os
 import paramiko
 import pickle
+import numpy as np
 
 class Controller(QtWidgets.QMainWindow):
         
@@ -31,9 +33,9 @@ class Controller(QtWidgets.QMainWindow):
                 self.REGRESION,self.MARTINELLI,self.PID = 0,1,2
                 self.modulations = [self.ui.RegresionWidget,self.ui.MartinelliWidget,self.ui.PIDWidget]
 
-                self.ui.Modulation.currentIndexChanged.connect(self.seleccionar_modulacion)
+                self.ui.modulation.currentIndexChanged.connect(self.seleccionar_modulacion)
                 #self.ui.pushButton.clicked.connect(self.obtener_informacion_widgets)
-                self.ui.StartButton.clicked.connect(self.conexion)
+                self.ui.StartButton.clicked.connect(self.start)
                 self.ui.LoadButton.clicked.connect(self.cargar_datos)
                 self.ui.SaveButton.clicked.connect(self.guardar_datos)
                 self.ui.SSHButton.clicked.connect(self.conexion)
@@ -43,6 +45,7 @@ class Controller(QtWidgets.QMainWindow):
                 self.conexion_tab.CheckButton.clicked.connect(self.SSH_comprobar_conexion)
                 self.conexion_tab.ResetButton.clicked.connect(self.SSH_resetear_parametros_conexion)
                 self.plot_tab.SFichero.clicked.connect(self.seleccionar_fichero_plot)
+                self.plot_tab.RepresentarButton.clicked.connect(self.representar_datos)
                 self.ssh_user,self.ssh_password,self.ssh_address,self.ssh_port,self.ssh_path = None,None,None,None,''
                 self.MAXSUCCION = 100
                 self.MINSUCCION = 30
@@ -53,6 +56,7 @@ class Controller(QtWidgets.QMainWindow):
                 self.MINTIEMPO = 0
                 self.MINSAMPLESINIO = 10
                 self.files_plot = []
+                self.colors = ["#FE0000","#25FD00","#00BAFE","#1400FD","#FD00CE","#FD7600","#FEF900","#2D5D0A","#83B62B","#000000","#800000","#87048F","#820624","#08EC81","#827E83","#D96B4E"]
 
                 self.reiniciar_widgets()
 
@@ -91,16 +95,16 @@ class Controller(QtWidgets.QMainWindow):
                 QMessageBox.critical(self,"Error","Error ocurrido al tratar los datos. Reviselos")
                 return
 
-            # Realizo un Pickle -> IMPORTANTE: CUIDADO CON LOS PICKLES, NO ABRIR NINGUNO DESCONOCIDO. RIESGO PARA LA SEGURIDAD DEL ORDENADOR
-            fileObject = open("pickle_dic.pkl","wb")
-            pickle.dump([mod,dict],fileObject,protocol=pickle.HIGHEST_PROTOCOL)
-            fileObject.close()
 
             if self.ui.SSHcheckBox.isChecked() == False:
                 self.comprobacion_datos_introducidos(mod,dict)
                 modul = tipos_modulacion[mod](dict)
                 path = modul.iniciar_captura_datos()
             else:
+                # Realizo un Pickle -> IMPORTANTE: CUIDADO CON LOS PICKLES, NO ABRIR NINGUNO DESCONOCIDO. RIESGO PARA LA SEGURIDAD DEL ORDENADOR
+                fileObject = open("pickle_dic.pkl","wb")
+                pickle.dump([mod,dict],fileObject,protocol=pickle.HIGHEST_PROTOCOL)
+                fileObject.close()
                 t = paramiko.Transport((self.ssh_address,int(self.ssh_port)))
                 t.connect(username=self.ssh_user, password=self.ssh_password)
                 sftp = paramiko.SFTPClient.from_transport(t)
@@ -119,33 +123,34 @@ class Controller(QtWidgets.QMainWindow):
             if text == True: 
                 self.plot_tab.Texto.clear()
                 self.files_plot.clear()
-            for checkBox in self.plot_tab.checkBoxs.children():
-                checkBox.setChecked(False)
-            self.plot_tab.SSHFicheroEdit.clear()
-
-        def representar_datos(self):
-            self.limpiar_opciones_plot(True)
-            self.ax.clear()
-            for c,file,options in enumerate(self.files):
-                data = np.genfromtxt(file,skipe_header=1,delimiter=' ').T
-                for c in options: ax.plot(data[c],color=c)
-                
-        def habilitar_SSH(self):
-            self.ui.SSHButton.setEnabled(True) if self.ui.SSHcheckBox.isChecked() == True else self.SSHButton.setEnabled(False)
+            for pos in range(self.plot_tab.checkBoxsLayout.count()):
+                self.plot_tab.checkBoxsLayout.itemAt(pos).widget().setChecked(False)
             return
 
-        def habilidar_SSH_plot(self):
-            self.plot_tab.SSHPlotWidget.hide() if self.plot_tab.SSHcheckBox.isChecked() == True else self.plot_tab.SSHPlotWidget.show()
+        def representar_datos(self):
+            self.ui.ax.clear()
+            for i,lst in enumerate(self.files_plot):
+                data = np.genfromtxt(lst[0],skip_header=1,delimiter=' ').T
+                for c in lst[1]: self.ui.ax.plot(data[c],color=self.colors[i%len(self.colors)])
+
+            self.ui.canvas.draw()
+            self.limpiar_opciones_plot(True)
+            return
+                
+        def habilitar_SSH(self):
+            self.ui.SSHButton.setEnabled(True) if self.ui.SSHcheckBox.isChecked() == True else self.ui.SSHButton.setEnabled(False)
             return
 
         def seleccionar_fichero_plot(self):
 
             filename = QFileDialog.getOpenFileName()[0]
+            if filename == '':
+                return
             columns,name = [],[]
-            for pos,checkBox in enumerate(self.plot_tab.checkBoxsLayout.children()):
-                if checkBox.isChecked() == True:
-                    columns.append(pos+1)
-                    name.append(checkBox.text())
+            for i in range(self.plot_tab.checkBoxsLayout.count()):
+                if self.plot_tab.checkBoxsLayout.itemAt(i).widget().isChecked() == True:
+                    columns.append(i+1)
+                    name.append(self.plot_tab.checkBoxsLayout.itemAt(i).widget().text())
 
             if len(columns) == 0:
                 QMessageBox.critical(self,"Error","Debe seleccionar una columna para su representacion")
@@ -153,7 +158,7 @@ class Controller(QtWidgets.QMainWindow):
 
             self.plot_tab.Texto.append("%s\n\t%s\n"%(filename,name))
             self.files_plot.append([filename,columns])
-            limpiar_opciones_plot(False)
+            self.limpiar_opciones_plot(False)
             return           
 
         def conexion(self):
@@ -168,8 +173,8 @@ class Controller(QtWidgets.QMainWindow):
 
         def SSH_resetear_parametros_conexion(self):
             self.ssh_user = self.ssh_password = self.ssh_address = self.ssh_port = self.ssh_path = None
-            for widget in self.conexion_tab.SSHEntriesLayout.children():
-                widget.clear()
+            for i in range(self.conexion_tab.SSHEntriesLayout.count()):
+                self.conexion_tab.SSHEntriesLayout.itemAt(i).widget().clear()
             return
 
         def SSH_comprobar_conexion(self):
@@ -186,7 +191,7 @@ class Controller(QtWidgets.QMainWindow):
 
         def seleccionar_modulacion(self):
 
-            selected = self.ui.Modulation.currentText()
+            selected = self.ui.modulation.currentText()
             self.reiniciar_widgets()
             if selected == "Regresion":
                 self.modulations[self.REGRESION].show()
@@ -199,17 +204,20 @@ class Controller(QtWidgets.QMainWindow):
 
         def reiniciar_widgets(self):
             
+            self.ui.SSHButton.setEnabled(False)
             for widgets in self.modulations:
                 widgets.hide()
         
             return
 
         def guardar_datos(self):
-            filename = QFileDialog.getOpenFileName()
+            filename = QFileDialog.getSaveFileName()
+            if filename[0] == '':
+                return
             file = open(filename[0],'w')
-            file.write("Modulation: %s\n"%(self.ui.Modulation.currentIndex()+1))
+            file.write("Modulation: %s\n"%(self.ui.modulation.currentIndex()+1))
             for i in range(self.ui.PuroLabelsLayout.count()):
-                file.write("%s: %s\n"%(self.ui.PuroLabelsLayout.itemAt(i).widget().text(),self.ui.PuroEntriesLayout.itemAt(i).widget().text()))
+                file.write("%s: %s"%(self.ui.PuroLabelsLayout.itemAt(i).widget().text(),self.ui.PuroEntriesLayout.itemAt(i).widget().text()))
            
             """ 
             La lista devuelta por children() tiene como 
@@ -221,54 +229,47 @@ class Controller(QtWidgets.QMainWindow):
             for widget in self.modulations:
                 if widget.isVisible() == True:
                     for label,entry in zip(widget.children()[1:int((len(widget.children())+1)/2)],widget.children()[int((len(widget.children())+1)/2):]):
-                        file.write("%s: %s\n"%(label.text(),entry.text()))
+                        file.write("%s: %s"%(label.text(),entry.text()))
 
 
             file.close()
             return
 
-        def cargar_datos(self):
-            self.resetear_entradas()
-            filename = QFileDialog.getOpenFileName()
-            file = open(filename[0],'r')
-            label,entry = file.readline().split(':')
-            self.ui.Modulation.setCurrentIndex(int(entry)-1)
-            for line in file.readlines():
-                label,entry = line.split(':')
-                try:
-                    self.findChild(QObject,label.replace(" ","_")+"_Edit").setText(entry)
-                except:
-                    QMessageBox.critical(self,"Error","Error ocurrido al cargar los datos. El identificador: %s no existe."%label)
-                    return
-            file.close()
-            return
-
-        def resetar_entradas(self):
+        def resetear_entradas(self):
             
-            for entry in self.ui.PuroEntriesLayout.children():
-                entry.clear()
+            for i in range(self.ui.PuroEntriesLayout.count()):
+                self.ui.PuroEntriesLayout.itemAt(i).widget().clear()
 
             for widget in self.modulations:
                 for entry in widget.children()[int((len(widget.children())+1)/2):]:
                     entry.clear()
 
-            for entry in self.ui.PlatformEntriesLayout.children():
-                entry.clear()
+            for i in range(self.ui.PlatformEntriesLayout.count()):
+                self.ui.PlatformEntriesLayout.itemAt(i).widget().clear()
 
             return
 
-        def seleccionar_ficheros(self):
-            filename,plot_options = QFileDialog.getOpenFileName()[0],[]
-            for pos,checkBox in enumerate(self.plot_tab.checkBoxsLayout.children()):
-                if checkBox.isChecked() == True:
-                    self.options.append(checkBox.text)
-                    plot_options.append(pos+1)
-                    checkBox.setChecked(False)
-                self.plot_selected_files.append([filename,plot_options])
-                self.plot_tab.texto.append("%s\n\t%s\n"%(filename,options))
+        def cargar_datos(self):
+            filename = QFileDialog.getOpenFileName()
+            if filename[0] == '':
+                return
+            self.resetear_entradas()
+            file = open(filename[0],'r')
+            for line in file.readlines():
+                if line[:2] == '//':
+                    continue
+                label,entry = line.split(':')
+                if label.lower() == "modulation":
+                    self.ui.modulation.setCurrentIndex(int(entry)-1)
+                else:
+                    try:
+                        self.findChild(QObject,label+"_Edit").setText(entry)
+                    except:
+                        QMessageBox.critical(self,"Error","Error ocurrido al cargar los datos. El identificador: %s no existe."%label)
+                        return
+            file.close()
             return
 
-    
 ############
 #   MAIN   #
 ############
