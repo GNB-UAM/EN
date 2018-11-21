@@ -156,7 +156,7 @@ def tratamiento_fichero_configuracion(dict):
     # Guardamos los datos en el diccionario, los guardo todos primero, porque puede haber datos necesarios para tratar que reciba al final
     for key,value in dict.items():
         #print(key,value)
-        if key in conf_values:
+        if key in platform_keywords:
             dict[key] = tratamiento_plataforma(key,value,mod)
         else:
             dict[key] = tratamiento_experimento(key,value,versiones,rept)
