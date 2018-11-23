@@ -353,7 +353,7 @@ class Puro(Modulacion):
         self.g.flush()
         self.event_TyH.set()
         time_end = time.time()
-        #print(time_end-time_ini,gas)
+        print(time_end-time_ini,gas)
 
         return (time_end - time_ini)
 
@@ -504,7 +504,7 @@ class Regresion(Modulacion):
         self.g.flush()
         self.event_TyH.set()
         time_end = time.time()
-        #print(time_end-time_ini,gas)
+        print(time_end-time_ini,gas)
         
         return (time_end-time_ini)
 
@@ -525,7 +525,7 @@ class Regresion(Modulacion):
         super().abrir_electrovalvulas(vector_valvulas)
         for count in range(n_muestras):
             value_sleep = self.valor_sensor(heat2600,string,opcion,vector_odorantes,samplesinicio,tendencia)
-            time.sleep(Modulacion.SLEEP - value_sleep)
+            if (Modulacion.SLEEP - value_sleep) < 1: time.sleep(Modulacion.SLEEP - value_sleep)
             self.muestras+=1
         super().cerrar_electrovalvulas()
 
@@ -761,7 +761,7 @@ class MPID(Modulacion): #ModulationPID
         self.lastError, self.addError, self.temp = error,ei,temperaturaPID
 
         time_end = time.time()
-        #print(time_end-time_ini)
+        print(time_end-time_ini)
         return [time_end - time_ini,valueTGS2600]
 
     def captura_odorante(self,vector_valvulas,vector_odorantes,n_muestras,string,periodo, Kp, Kd, Ki, 
@@ -787,7 +787,7 @@ class MPID(Modulacion): #ModulationPID
 
             subtarget = self.target[self.muestras%periodo]
             ret_values = self.valor_sensor(string,vector_odorantes, subtarget, Kp, Kd, Ki, temperature_Max_Upper_Bound, temperature_Min_Lower_Bound)
-            time.sleep(Modulacion.SLEEP - ret_values[0])
+            if Modulacion.SLEEP - ret_values[0] < 1: time.sleep(Modulacion.SLEEP - ret_values[0])
             
             
             self.max_PID_temp,self.max_value = self.calculate_min_max_value(subtarget, ret_values[1], max, self.max_value, self.temp, self.max_PID_temp)

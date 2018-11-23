@@ -11,6 +11,8 @@ import os
 import paramiko
 import pickle
 import numpy as np
+sys.path.insert(0,'../')
+import tratamiento_cadenas as tc
 
 class Controller(QtWidgets.QMainWindow):
         
@@ -76,26 +78,37 @@ class Controller(QtWidgets.QMainWindow):
                         exit(1)
 
         def start(self):
-            if self.ssh_address == None or self.ssh_port == None or self.ssh_user == None or self.ssh_password == None:
-                QMessageBox.critical(self,"Error","Introduzca los datos para la conexion ssh.")
-                return
+            #if self.ui.SSHcheckBox.isChecked() == False and (self.ssh_address == None or self.ssh_port == None or self.ssh_user == None or self.ssh_password == None):
+            #    QMessageBox.critical(self,"Error","Introduzca los datos para la conexion ssh.")
+            #    return
 
             dict = {}
-            for label,entry in zip(self.ui.PuroLabelsLayout.children(),self.ui.PuroEntriesLayout.children()):
-                dict[label.objectName()] = entry.text()
+            dict[self.ui.modulation.objectName()] = str(self.ui.modulation.currentIndex()+1)
+            dict[VALPOS] = 'P'
+	    dict[SENTYPE] = 3
+	    dict[RDTIME] = 0.1
+	    dict[ELECPORTS] = ['P8_10','P8_12','P8_14','P8_16']
+            for i in range(self.ui.PuroLabelsLayout.count()):
+                dict[self.ui.PuroLabelsLayout.itemAt(i).widget().objectName()] = self.ui.PuroEntriesLayout.itemAt(i).widget().text()[1:-1]
 
             for widget in self.modulations:
                 if widget.isVisible() == True:
                     for label,entry in zip(widget.children()[1:int((len(widget.children())+1)/2)],widget.children()[int((len(widget.children())+1)/2):]):
-                        dict[label.objectName()] = entry.text()
+                        dict[label.objectName()] = entry.text()[1:-1]
+        
+            for i in range(self.ui.PlatformLabelLayout.count()):
+                dict[self.ui.PlatformLabelLayout.itemAt(i).widget().objectName()] = self.ui.PlatformEntriesLayout.itemAt(i).widget().text()[1:-1]
 
+            
             try:
-                mod,dict = tratamiento_fichero_configuracion(dict)
+                print("HOLA",dict)
+                mod,dict = tc.tratamiento_fichero_configuracion(dict)
             except:
                 QMessageBox.critical(self,"Error","Error ocurrido al tratar los datos. Reviselos")
                 return
 
-
+            print("HOLA2")
+            exit(1)
             if self.ui.SSHcheckBox.isChecked() == False:
                 self.comprobacion_datos_introducidos(mod,dict)
                 modul = tipos_modulacion[mod](dict)
