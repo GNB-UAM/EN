@@ -25,14 +25,14 @@ tipos_modulacion = {1:modulacion.Puro,2:modulacion.Regresion,3:modulacion.Martin
 def comprobacion_datos_introducidos(mod,experiment_data_dict):
     
     #Caso base, opciones comunes
-    for suc,sw,sini in zip(experiment_data_dict[tc.SSUCCION],experiment_data_dict[tc.SSWESTIM],experiment_data_dict[tc.SSINICIO]):
+    for suc,sw,sini in zip(experiment_data_dict[tc.SUCCION],experiment_data_dict[tc.SWESTIM],experiment_data_dict[tc.SINICIO]):
         if suc > MAXSUCCION or suc < MINSUCCION or sw < MINSWICHT or (mod != 3 and sini < MINSAMPLESINIO):
             print ('PARAMETROS(S) INCORRECTO(S).\n Por favor revise los parametros introducidos y vuelva a empezar')
             exit(1)
 
     #Caso de regresion
     if mod == 2:
-        for tend,he in zip(experiment_data_dict[tc.STEND],experiment_data_dict[tc.SHTSENSOR]):
+        for tend,he in zip(experiment_data_dict[tc.TEND],experiment_data_dict[tc.HTSENSOR]):
             if he < MINHEAT or he > MAXHEAT or tend < MINTENDENCIA:
                 print ('PARAMETROS(S) INCORRECTO(S).\n Por favor revise los parametros introducidos y vuelva a empezar')
                 exit(1)
