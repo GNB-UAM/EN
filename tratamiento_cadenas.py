@@ -150,11 +150,11 @@ def leer_fichero_configuracion(path):
 
 def tratamiento_fichero_configuracion(dict):
 
-    print("HOLAAAAAA!")
+    #print("HOLAAAAAA!")
     rept,mod = int(dict.pop(NEXPERIMENTOS)),int(dict.pop(MODULACION))
     versiones = tratamiento_expresion(dict.pop(VEXPE),rept)
 
-    print("ASDF")
+    #print("ASDF")
     # Guardamos los datos en el diccionario, los guardo todos primero, porque puede haber datos necesarios para tratar que reciba al final
     for key,value in dict.items():
         print(key,value)
@@ -164,7 +164,7 @@ def tratamiento_fichero_configuracion(dict):
             dict[key] = tratamiento_experimento(key,value,versiones,rept)
             
     
-    print("MUESTRAS",dict[SVECOPODR])
+    #print("MUESTRAS",dict[SVECOPODR])
     # Creamos las series de odorantes que se van a analizar
     vecs_open_valves_ret,vector_open_valves,muestras,pos_valvulas,valvulas_seleccionadas,nombre_valvulas_abrir = [],dict[VECOPVAL],dict.pop(NMUESTRAS),dict[VALPOS],dict[ELECPORTS],[]
     for version in versiones:
