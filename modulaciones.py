@@ -525,7 +525,7 @@ class Regresion(Modulacion):
         super().abrir_electrovalvulas(vector_valvulas)
         for count in range(n_muestras):
             value_sleep = self.valor_sensor(heat2600,string,opcion,vector_odorantes,samplesinicio,tendencia)
-            if (Modulacion.SLEEP - value_sleep) < 1: time.sleep(Modulacion.SLEEP - value_sleep)
+            if (Modulacion.SLEEP - value_sleep) > 0: time.sleep(Modulacion.SLEEP - value_sleep)
             self.muestras+=1
         super().cerrar_electrovalvulas()
 
@@ -787,7 +787,7 @@ class MPID(Modulacion): #ModulationPID
 
             subtarget = self.target[self.muestras%periodo]
             ret_values = self.valor_sensor(string,vector_odorantes, subtarget, Kp, Kd, Ki, temperature_Max_Upper_Bound, temperature_Min_Lower_Bound)
-            if Modulacion.SLEEP - ret_values[0] < 1: time.sleep(Modulacion.SLEEP - ret_values[0])
+            if Modulacion.SLEEP - ret_values[0] > 0: time.sleep(Modulacion.SLEEP - ret_values[0])
             
             
             self.max_PID_temp,self.max_value = self.calculate_min_max_value(subtarget, ret_values[1], max, self.max_value, self.temp, self.max_PID_temp)
@@ -851,7 +851,7 @@ class MPID(Modulacion): #ModulationPID
             RSTGS = ((Modulacion.Vcc*MPID.Rl_2600)/(valueTGS2600/1000.0)) - MPID.Rl_2600
             time_end = time.time()
 
-            if time_end - time_ini < 1: time.sleep(Modulacion.SLEEP - (time_end - time_ini)) 
+            if time_end - time_ini > 0: time.sleep(Modulacion.SLEEP - (time_end - time_ini)) 
             self.f.writelines("%d %.5f %.5f %.5f %s %s\n"%
                 (self.muestras,valueTGS2600,RSTGS,heat,instante_captura,'4'))
             self.f.flush()
