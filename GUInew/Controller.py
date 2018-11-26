@@ -13,6 +13,8 @@ import pickle
 import numpy as np
 sys.path.insert(0,'../')
 import tratamiento_cadenas as tc
+import re
+#import modulaciones as modulacion
 
 class Controller(QtWidgets.QMainWindow):
         
@@ -59,10 +61,12 @@ class Controller(QtWidgets.QMainWindow):
         self.MINSAMPLESINIO = 10
         self.files_plot = []
         self.colors = ["#FE0000","#25FD00","#00BAFE","#1400FD","#FD00CE","#FD7600","#FEF900","#2D5D0A","#83B62B","#000000","#800000","#87048F","#820624","#08EC81","#827E83","#D96B4E"]
+        #self.tipos_modulacion = {1:modulacion.Puro,2:modulacion.Regresion,3:modulacion.Martinelli,4:modulacion.MPID}
+                
 
         self.reiniciar_widgets()
 
-    def comprobacion_datos_introducidos(mod,experiment_data_dict):
+    def comprobacion_datos_introducidos(self,mod,experiment_data_dict):
     
         #Caso base, opciones comunes
         for suc,sw,sini in zip(experiment_data_dict[tc.SUCCION],experiment_data_dict[tc.SWESTIM],experiment_data_dict[tc.SINICIO]):
@@ -78,48 +82,51 @@ class Controller(QtWidgets.QMainWindow):
                     exit(1)
 
     def start(self):
-        if self.ui.SSHcheckBox.isChecked() == False and (self.ssh_address == None or self.ssh_port == None or self.ssh_user == None or self.ssh_password == None):
+        if self.ui.SSHcheckBox.isChecked() == True and (self.ssh_address == None or self.ssh_port == None or self.ssh_user == None or self.ssh_password == None):
             QMessageBox.critical(self,"Error","Introduzca los datos para la conexion ssh.")
             return
 
         dict = {}
         dict[self.ui.modulation.objectName()] = str(self.ui.modulation.currentIndex()+1)
-        #Cargamos valores por defecto de configuracion
-        dict[VALPOS] = 'P'
-        dict[SENTYPE] = 3
-        dict[RDTIME] = 0.1
-        dict[ELECPORTS] = ['P8_10','P8_12','P8_14','P8_16']
 
         #Guardamos las opciones recogidas en la interfaz
         for i in range(self.ui.PuroLabelsLayout.count()):
-            if self.ui.PuroEntriesLayout.itemAt(i).widget().text()[1:-1] != '':
-                dict[self.ui.PuroLabelsLayout.itemAt(i).widget().objectName()] = self.ui.PuroEntriesLayout.itemAt(i).widget().text()[1:-1]
+            if self.ui.PuroEntriesLayout.itemAt(i).widget().text() != '':
+                dict[self.ui.PuroLabelsLayout.itemAt(i).widget().objectName()] = self.ui.PuroEntriesLayout.itemAt(i).widget().text()
             else:
                 dict[self.ui.PuroLabelsLayout.itemAt(i).widget().objectName()] = '0*'
 
         for widget in self.modulations:
             if widget.isVisible() == True:
                 for label,entry in zip(widget.children()[1:int((len(widget.children())+1)/2)],widget.children()[int((len(widget.children())+1)/2):]):
-                    dict[label.objectName()] = entry.text()[1:-1] if entry.text()[1:-1] != '' else dict[label.objectName()] = '0*'
+                    dict[label.objectName()] = entry.text() if entry.text() != '' else '0*'
         
             for i in range(self.ui.PlatformLabelLayout.count()):
-                dict[self.ui.PlatformLabelLayout.itemAt(i).widget().objectName()] = self.ui.PlatformEntriesLayout.itemAt(i).widget().text()[1:-1]
+                dict[self.ui.PlatformLabelLayout.itemAt(i).widget().objectName()] = self.ui.PlatformEntriesLayout.itemAt(i).widget().text()
+
+        #Cargamos valores por defecto de configuracion
+        if dict[tc.VALPOS] == '': dict[tc.VALPOS] = 'P'
+        if dict[tc.SENTYPE] == '': dict[tc.SENTYPE] = 3
+        if dict[tc.RDTIME] == '': dict[tc.RDTIME] = 0.1
+        if dict[tc.ELECPORTS] == '': dict[tc.ELECPORTS] = ['P8_10','P8_12','P8_14','P8_16']
+        
 
         try:
-            #print("HOLA",dict)
             mod,dict = tc.tratamiento_fichero_configuracion(dict)
         except:
             QMessageBox.critical(self,"Error","Error ocurrido al tratar los datos. Reviselos")
             return
-
+        #print(mod,dict)
+        self.comprobacion_datos_introducidos(mod,dict)
         #print("HOLA2")
         #exit(1)
+        print("HOLA",dict)
         if self.ui.SSHcheckBox.isChecked() == False:
-            self.comprobacion_datos_introducidos(mod,dict)
-            modul = tipos_modulacion[mod](dict)
+            modul = self.tipos_modulacion[mod](dict)
             path = modul.iniciar_captura_datos()
         else:
             # Realizo un Pickle -> IMPORTANTE: CUIDADO CON LOS PICKLES, NO ABRIR NINGUNO DESCONOCIDO. RIESGO PARA LA SEGURIDAD DEL ORDENADOR
+            print(self.ssh_address,self.ssh_path,self.ssh_path+"pickle_dic.pkl")
             fileObject = open("pickle_dic.pkl","wb")
             pickle.dump([mod,dict],fileObject,protocol=pickle.HIGHEST_PROTOCOL)
             fileObject.close()
@@ -134,8 +141,12 @@ class Controller(QtWidgets.QMainWindow):
             ssh.connect(self.ssh_address,int(self.ssh_port),self.ssh_user,self.ssh_password)
             command = 'cd '+self.ssh_path+' && sudo python3 PyHuele.py --remote'
             stdin,stdout,stderr = ssh.exec_command(command)
+            #print(1,stdin.read())
+            print(2,stdout.read())
+            print(3,stderr.read())
             ssh.close()
             os.remove("pickle_dic.pkl")
+        return
                    
     def limpiar_opciones_plot(self,text):
         if text == True: 
@@ -155,9 +166,9 @@ class Controller(QtWidgets.QMainWindow):
         self.limpiar_opciones_plot(True)
         return
                 
-        def habilitar_SSH(self):
-            self.ui.SSHButton.setEnabled(True) if self.ui.SSHcheckBox.isChecked() == True else self.ui.SSHButton.setEnabled(False)
-            return
+    def habilitar_SSH(self):
+        self.ui.SSHButton.setEnabled(True) if self.ui.SSHcheckBox.isChecked() == True else self.ui.SSHButton.setEnabled(False)
+        return
 
     def seleccionar_fichero_plot(self):
 
@@ -278,13 +289,13 @@ class Controller(QtWidgets.QMainWindow):
             line,entry = re.split(':|//',line)
             if line == '':
                 continue
-            if label.lower() == "modulation":
+            if line.lower() == "modulation":
                 self.ui.modulation.setCurrentIndex(int(entry)-1)
             else:
                 try:
-                    self.findChild(QObject,label+"_Edit").setText(entry)
+                    self.findChild(QObject,line.lower()+"_Edit").setText(entry)
                 except:
-                    QMessageBox.critical(self,"Error","Error ocurrido al cargar los datos. El identificador: %s no existe."%label)
+                    QMessageBox.critical(self,"Error","Error ocurrido al cargar los datos. El identificador: %s no existe."%line.lower())
                     return
         file.close()
         return

@@ -7,9 +7,6 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
-from matplotlib.figure import Figure
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -163,9 +160,9 @@ class Ui_MainWindow(object):
         self.PlatformLabelLayout.setContentsMargins(11, 11, 11, 11)
         self.PlatformLabelLayout.setSpacing(0)
         self.PlatformLabelLayout.setObjectName("PlatformLabelLayout")
-        self.capture_sample_time = QtWidgets.QLabel(self.horizontalLayoutWidget_2)
-        self.capture_sample_time.setObjectName("capture_sample_time")
-        self.PlatformLabelLayout.addWidget(self.capture_sample_time)
+        self.reading_time = QtWidgets.QLabel(self.horizontalLayoutWidget_2)
+        self.reading_time.setObjectName("reading_time")
+        self.PlatformLabelLayout.addWidget(self.reading_time)
         self.model_tgs_sensor = QtWidgets.QLabel(self.horizontalLayoutWidget_2)
         self.model_tgs_sensor.setObjectName("model_tgs_sensor")
         self.PlatformLabelLayout.addWidget(self.model_tgs_sensor)
@@ -213,9 +210,9 @@ class Ui_MainWindow(object):
         self.PlatformEntriesLayout.setContentsMargins(11, 11, 11, 11)
         self.PlatformEntriesLayout.setSpacing(0)
         self.PlatformEntriesLayout.setObjectName("PlatformEntriesLayout")
-        self.capture_sample_time_Edit = QtWidgets.QLineEdit(self.horizontalLayoutWidget_2)
-        self.capture_sample_time_Edit.setObjectName("capture_sample_time_Edit")
-        self.PlatformEntriesLayout.addWidget(self.capture_sample_time_Edit)
+        self.reading_time_Edit = QtWidgets.QLineEdit(self.horizontalLayoutWidget_2)
+        self.reading_time_Edit.setObjectName("reading_time_Edit")
+        self.PlatformEntriesLayout.addWidget(self.reading_time_Edit)
         self.model_tgs_sensor_Edit = QtWidgets.QLineEdit(self.horizontalLayoutWidget_2)
         self.model_tgs_sensor_Edit.setObjectName("model_tgs_sensor_Edit")
         self.PlatformEntriesLayout.addWidget(self.model_tgs_sensor_Edit)
@@ -365,13 +362,6 @@ class Ui_MainWindow(object):
         self.verticalLayout.setContentsMargins(11, 11, 11, 11)
         self.verticalLayout.setSpacing(6)
         self.verticalLayout.setObjectName("verticalLayout")
-        #######################################################################
-        figure = Figure()
-        self.canvas = FigureCanvas(figure)
-        self.verticalLayout.addWidget(self.canvas)
-        self.ax = figure.add_subplot(111)
-        self.ax.clear()
-        #######################################################################
         self.ConfPlotButton = QtWidgets.QPushButton(self.Visual_Mode)
         self.ConfPlotButton.setGeometry(QtCore.QRect(20, 490, 181, 21))
         self.ConfPlotButton.setObjectName("ConfPlotButton")
@@ -415,7 +405,7 @@ class Ui_MainWindow(object):
         self.StartButton.setText(_translate("MainWindow", "Start"))
         self.LoadButton.setText(_translate("MainWindow", "Load"))
         self.SaveButton.setText(_translate("MainWindow", "Save"))
-        self.capture_sample_time.setText(_translate("MainWindow", "Capture sample time"))
+        self.reading_time.setText(_translate("MainWindow", "Reading time"))
         self.model_tgs_sensor.setText(_translate("MainWindow", "Model TGS sensor"))
         self.electrovalves_port.setText(_translate("MainWindow", "Electrovalves port"))
         self.model_tyh_sensor.setText(_translate("MainWindow", "Model TyH sensor"))

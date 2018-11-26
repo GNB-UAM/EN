@@ -6,6 +6,7 @@ import sys,os
 import modulaciones as modulacion
 import tratamiento_cadenas as tc
 import signal
+import pickle
 
 # Valores límite para la ejecucion
 MAXSUCCION = 100
