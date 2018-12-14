@@ -251,11 +251,13 @@ class Modulacion(object):
     def cierre_hilos(self,heatpin):
         
         PWM.start(heatpin,100)
+        PWM.stop(Modulacion.motorPin)
         os.remove("file_daemon.txt")
 
         #Esperamos a que el hilo de TyH acabe
         self.thread.do_run = False
         self.thread.join()
+        
 
         return
     
